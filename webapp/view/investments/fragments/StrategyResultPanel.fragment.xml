@@ -1,32 +1,56 @@
 <core:FragmentDefinition
     xmlns="sap.m"
     xmlns:f="sap.ui.layout.form"
-    xmlns:core="sap.ui.core">
-    <Panel id="strategyResultPanelFragment"
+    xmlns:core="sap.ui.core"
+>
+    <Panel
+        id="strategyResultPanelFragment"
         headerText="{i18n>strategyResultPanelTitle}"
         expandable="true"
         expanded="{= !!${strategyResultModel>/hasResults} }"
-        class="sapUiTinyMarginTop">
+        class="sapUiTinyMarginTop"
+    >
         <content>
-            <HBox renderType="Bare" alignItems="Start" width="100%">
+            <HBox
+                renderType="Bare"
+                alignItems="Start"
+                width="100%"
+            >
                 <!-- Columna 1: Información -->
-                <VBox width="50%" class="">
-                    <f:SimpleForm id="strategyResultInfoFormInFragment"
+                <VBox
+                    width="50%"
+                    class=""
+                >
+                    <f:SimpleForm
+                        id="strategyResultInfoFormInFragment"
                         editable="false"
                         layout="ResponsiveGridLayout"
                         title="{i18n>strategyResultInfoTitle}"
-                        labelSpanXL="4" labelSpanL="4" labelSpanM="12" labelSpanS="12">
+                        labelSpanXL="4"
+                        labelSpanL="4"
+                        labelSpanM="12"
+                        labelSpanS="12"
+                    >
                         <f:content>
                             <Label text="{i18n>strategyResultPeriodLabel}" />
-                            <Text text="{strategyResultModel>/date_from} - {strategyResultModel>/date_to}" />
+                            <Text
+                                text="{strategyResultModel>/date_from} - {strategyResultModel>/date_to}"
+                            />
 
                             <Label text="{i18n>strategyResultMaParamsLabel}" />
-                            <Text text="{strategyResultModel>/moving_averages/short} / {strategyResultModel>/moving_averages/long}" />
+                            <Text
+                                text="{strategyResultModel>/moving_averages/short} / {strategyResultModel>/moving_averages/long}"
+                            />
 
-                            <Label text="{i18n>strategyResultOverallSignalLabel}" />
+                            <Label
+                                text="{i18n>strategyResultOverallSignalLabel}"
+                            />
                             <Text text="{strategyResultModel>/signal}" />
 
-                            <Label text="{i18n>strategyResultNetResultLabel}" design="Bold"/>
+                            <Label
+                                text="{i18n>strategyResultNetResultLabel}"
+                                design="Bold"
+                            />
                             <ObjectNumber
                                 number="{
                                     path: 'strategyResultModel>/result',
@@ -34,30 +58,53 @@
                                     formatOptions: { minFractionDigits: 2, maxFractionDigits: 2, groupingEnabled: true }
                                 }"
                                 emphasized="true"
-                                state="{= ${strategyResultModel>/result} > 0 ? 'Success' : (${strategyResultModel>/result} &lt; 0 ? 'Error' : 'None') }" />
+                                state="{= ${strategyResultModel>/result} > 0 ? 'Success' : (${strategyResultModel>/result} &lt; 0 ? 'Error' : 'None') }"
+                            />
                         </f:content>
                     </f:SimpleForm>
                 </VBox>
                 <!-- Columna 2: Tabla de señales -->
                 <VBox width="50%">
-                    <Table id="strategySignalsTableInFragment"
+                    <Table
+                        id="strategySignalsTableInFragment"
                         headerText="{i18n>strategyResultSignalsTableTitle}"
                         items="{strategyResultModel>/signals}"
                         visible="{= !!${strategyResultModel>/signals} &amp;&amp; ${strategyResultModel>/signals}.length > 0}"
-                        class="">
+                        class=""
+                    >
                         <columns>
-                            <Column width="25%"><Text text="{i18n>signalDateLabel}" /></Column>
-                            <Column width="20%"><Text text="{i18n>signalTypeLabel}" /></Column>
-                            <Column width="25%" hAlign="Right"><Text text="{i18n>signalPriceLabel}" /></Column>
-                            <Column width="30%"><Text text="{i18n>signalConfidenceLabel}" /></Column>
+                            <Column width="25%">
+                                <Text text="{i18n>signalDateLabel}" />
+                            </Column>
+                            <Column width="20%">
+                                <Text text="{i18n>signalTypeLabel}" />
+                            </Column>
+                            <Column
+                                width="25%"
+                                hAlign="Right"
+                            >
+                                <Text text="{i18n>signalPriceLabel}" />
+                            </Column>
+                            <Column width="30%">
+                                <Text text="{i18n>signalConfidenceLabel}" />
+                            </Column>
                         </columns>
                         <items>
                             <ColumnListItem>
                                 <cells>
-                                    <Text text="{path: 'strategyResultModel>date', type: 'sap.ui.model.type.Date', formatOptions: {style: 'medium'}}" />
-                                    <Text text="{= ${strategyResultModel>type} === 'buy' ? ${i18n>signalTypeBuy} : (${strategyResultModel>type} === 'sell' ? ${i18n>signalTypeSell} : ${strategyResultModel>type}) }" />
-                                    <ObjectNumber number="{parts: [{path: 'strategyResultModel>price'}], formatter: '.formatters.formatDecimalNumber'}" emphasized="false" />
-                                    <Text text="{strategyResultModel>confidence}" />
+                                    <Text
+                                        text="{path: 'strategyResultModel>date', type: 'sap.ui.model.type.Date', formatOptions: {style: 'medium'}}"
+                                    />
+                                    <Text
+                                        text="{= ${strategyResultModel>type} === 'buy' ? ${i18n>signalTypeBuy} : (${strategyResultModel>type} === 'sell' ? ${i18n>signalTypeSell} : ${strategyResultModel>type}) }"
+                                    />
+                                    <ObjectNumber
+                                        number="{parts: [{path: 'strategyResultModel>price'}], formatter: '.formatters.formatDecimalNumber'}"
+                                        emphasized="false"
+                                    />
+                                    <Text
+                                        text="{strategyResultModel>confidence}"
+                                    />
                                 </cells>
                             </ColumnListItem>
                         </items>
