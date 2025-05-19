@@ -111,8 +111,8 @@
                             <StepInput
                                 id="investmentAmountInputInFragment"
                                 value="{strategyAnalysisModel>/investmentAmount}"
-                                min="1"
-                                step="1"
+                                min="1000"
+                                step="100"
                                 displayValuePrecision="0"
                                 placeholder="Ej: 10"
                                 width="100%"
