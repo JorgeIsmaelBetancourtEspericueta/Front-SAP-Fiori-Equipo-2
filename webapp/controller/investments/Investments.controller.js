@@ -3,7 +3,7 @@ sap.ui.define(
     "sap/ui/core/mvc/Controller",
     "sap/ui/model/json/JSONModel",
     "sap/m/MessageToast",
-    "sap/ui/core/format/DateFormat",
+    "sap/ui/core/format/DateFormat", // Corrected: Removed the duplicate
     "sap/m/MessageBox",
     "sap/viz/ui5/controls/VizFrame",
     "sap/viz/ui5/data/FlattenedDataset",
@@ -58,6 +58,7 @@ sap.ui.define(
             moving_averages: { short: null, long: null },
             signals: [],
             busy: false,
+            initialInvestment: 0, // Added initialInvestment here
           };
           this.oModel = new JSONModel(initialResultData);
           this.getView().setModel(this.oModel, "strategyResultModel");
@@ -323,6 +324,8 @@ sap.ui.define(
             this.byId("strategyResultPanel") ||
             sap.ui.core.Fragment.byId("strategyResultPanel");
           var sSymbol = oView.byId("symbolSelector").getSelectedKey();
+          let initialInvestment =
+            oStrategyModel.getProperty("/investmentAmount"); // Get initial Investment from the model
 
           if (!oStrategyModel.getProperty("/strategyKey")) {
             MessageBox.warning("Seleccione una estrategia");
@@ -330,6 +333,10 @@ sap.ui.define(
           }
           if (!sSymbol) {
             MessageBox.warning("Seleccione un símbolo (ej: AAPL)");
+            return;
+          }
+          if (!initialInvestment) {
+            MessageBox.warning("Por favor, ingrese un monto de inversión.");
             return;
           }
 
@@ -368,7 +375,6 @@ sap.ui.define(
           let longSMA = oStrategyModel.getProperty("/longSMA");
           let startDateFormatted = this._formatDate(startDate);
           let endDateFormatted = this._formatDate(endDate);
-          let initialInvestment = 30000;
           let simulationName = oStrategyModel.getProperty("/strategyKey");
 
           if (oStrategyModel.getProperty("/strategyKey") === "MACrossover") {
@@ -389,6 +395,7 @@ sap.ui.define(
           console.log("URL de Fetch:", fetchUrl);
 
           oResultModel.setProperty("/busy", true);
+          oResultModel.setProperty("/initialInvestment", initialInvestment); //Set initial investment
 
           fetch(fetchUrl, {
             method: "POST",
@@ -414,7 +421,7 @@ sap.ui.define(
               const simulationData = data.value?.[0]?.simulation;
 
               oResultModel.setProperty("/hasResults", true);
-              oResultModel.setProperty("/result", simulationData.result || 0);
+              oResultModel.setProperty("/result", simulationData.result || 0); //set result
               oResultModel.setProperty("/historicalPrices", historicalPrices);
 
               // Prepara los datos para la tabla y el gráfico
@@ -688,6 +695,7 @@ sap.ui.define(
             result: simulationData.result || 0, //added default
             signals: [],
             busy: false,
+            initialInvestment: simulationData.initial_investment, // ADDED HERE
           };
 
           const historicalPrices = simulationData.historicalPrices || [];

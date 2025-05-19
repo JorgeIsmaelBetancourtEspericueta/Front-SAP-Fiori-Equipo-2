@@ -43,7 +43,10 @@
                         />
                     </ComboBox>
 
-                    <VBox visible="{strategyAnalysisModel>/controlsVisible}">
+                    <VBox
+                        id="__vbox9"
+                        visible="{strategyAnalysisModel>/controlsVisible}"
+                    >
                         <HBox
                             justifyContent="SpaceBetween"
                             width="100%"
@@ -78,7 +81,8 @@
                             <DatePicker
                                 id="startDatePickerInFragment"
                                 value="{
-                                    path: 'strategyAnalysisModel>/startDate', type: 'sap.ui.model.type.Date',
+                                    path: 'strategyAnalysisModel>/startDate',
+                                    type: 'sap.ui.model.type.Date',
                                     formatOptions: { pattern: 'yyyy-MM-dd' }
                                 }"
                                 displayFormat="long"
@@ -90,7 +94,8 @@
                             <DatePicker
                                 id="endDatePickerInFragment"
                                 value="{
-                                    path: 'strategyAnalysisModel>/endDate', type: 'sap.ui.model.type.Date',
+                                    path: 'strategyAnalysisModel>/endDate',
+                                    type: 'sap.ui.model.type.Date',
                                     formatOptions: { pattern: 'yyyy-MM-dd' }
                                 }"
                                 displayFormat="long"
@@ -98,15 +103,14 @@
                             />
                         </VBox>
 
-                        <VBox
-                            visible="{= ${strategyAnalysisModel>/strategyKey} !== 'ReversionSimple' }"
-                        >
+                        <VBox>
                             <Label
                                 class="sapUiTinyMarginTop"
-                                text="Cantidad de acciones"
+                                text="{i18n>investmentAmountLabelText}"
                             />
                             <StepInput
-                                value="{strategyAnalysisModel>/stock}"
+                                id="investmentAmountInputInFragment"
+                                value="{strategyAnalysisModel>/investmentAmount}"
                                 min="1"
                                 step="1"
                                 displayValuePrecision="0"

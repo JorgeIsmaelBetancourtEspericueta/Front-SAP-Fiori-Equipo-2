@@ -21,10 +21,10 @@
                 type="XML"
             />
             <ToolbarSpacer />
-            <Text
+            <!-- <Text
                 text="{= 'Balance: $' + ${strategyAnalysisModel>/balance} }"
                 class="customSuccessText sapUiSmallMarginBegin"
-            />
+            /> -->
         </headerContent>
         <content>
             <VBox class="sapUiResponsivePadding">
