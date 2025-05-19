@@ -14,7 +14,7 @@ sap.ui.define(
     Controller,
     JSONModel,
     MessageToast,
-    DateFormat,
+    DateFormat, // Corrected: Removed the duplicate
     MessageBox,
     VizFrame,
     FlattenedDataset,
@@ -416,10 +416,10 @@ sap.ui.define(
               oResultModel.setProperty("/hasResults", true);
               oResultModel.setProperty("/result", simulationData.result || 0);
               oResultModel.setProperty("/historicalPrices", historicalPrices);
-              oResultModel.setProperty(
-                "/chart_data",
-                this._prepareTableData(historicalPrices)
-              );
+
+              // Prepara los datos para la tabla y el gráfico
+              const chartData = this._prepareTableData(historicalPrices);
+              oResultModel.setProperty("/chart_data", chartData);
 
               oResultModel.setProperty("/date_from", simulationData.startDate);
               oResultModel.setProperty("/date_to", simulationData.endDate);
@@ -450,7 +450,7 @@ sap.ui.define(
               }
 
               oResultModel.setProperty("/signals", []);
-              this._updateChart(historicalPrices);
+              this._updateChart(chartData);
               MessageToast.show("Datos de precios cargados.");
             })
             .catch((error) => {
@@ -496,7 +496,7 @@ sap.ui.define(
           return preparedData;
         },
 
-        _updateChart: function (aHistoricalPrices) {
+        _updateChart: function (aData) {
           const oVizFrame = this.byId("idVizFrame");
           if (!oVizFrame) {
             return;
@@ -517,7 +517,8 @@ sap.ui.define(
 
           const oDataset = new FlattenedDataset({
             data: {
-              path: "/chart_data",
+              path: "/root",
+              model: new JSONModel({ root: aData }),
             },
             dimensions: [
               {
@@ -534,11 +535,9 @@ sap.ui.define(
               { name: "Volume", value: "{VOLUME}" },
             ],
           });
-
           oVizFrame.setDataset(oDataset);
+          oVizFrame.setModel(new JSONModel({}));
 
-          const oModel = this.oModel;
-          oVizFrame.setModel(oModel);
           oVizFrame.setVizType("line");
 
           const aFeedItems = [
@@ -566,6 +565,11 @@ sap.ui.define(
               uid: "valueAxis",
               type: "Measure",
               values: ["Low"],
+            }),
+            new FeedItem({
+              uid: "valueAxis",
+              type: "Measure",
+              values: ["Volume"],
             }),
           ];
 
@@ -681,7 +685,7 @@ sap.ui.define(
               long: null,
             },
             signal: null,
-            result: simulationData.result,
+            result: simulationData.result || 0, //added default
             signals: [],
             busy: false,
           };
