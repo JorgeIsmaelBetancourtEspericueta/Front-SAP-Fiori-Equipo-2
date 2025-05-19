@@ -30,7 +30,7 @@
         </m:Toolbar>
 
         <tl:Table id="IdTable1UsersManageTable"
-            rows="{/value/0/users}"
+            rows="{/value}"
             selectionMode="Single"
             alternateRowColors="true"
             selectionBehavior="RowOnly"
@@ -94,7 +94,7 @@
             <tl:Column id="IdColumnRoles" sortProperty="ROLES" width="12rem" autoResizable="true" resizable="true">
                 <m:Label id="IdLabelRoles" text="ROLES" />
                 <tl:template>
-                    <m:Text id="IdTextRoles" text="{path: 'ROLES', formatter: '.formatRoles'}" wrapping="false"/>
+                    <m:Text id="IdTextRoles" text="{ROLES}" wrapping="false"/>
                 </tl:template>
             </tl:Column>
 
@@ -108,7 +108,7 @@
             <tl:Column id="IdColumnStatus" sortProperty="STATUS" width="12rem" autoResizable="true" resizable="true">
                 <m:Label id="IdLabelStatus" text="STATUS" />
                 <tl:template>
-                    <m:Text id="IdTextStatus" text="{STATUS}"/>
+                    <m:ObjectStatus id="IdTextStatus" text="{= ${DETAIL_ROW/ACTIVED} ? 'Activo' : 'Inactivo' }" state="{= ${DETAIL_ROW/ACTIVED} ? 'Success' : 'Warning' }"/>
                 </tl:template>
             </tl:Column>
 

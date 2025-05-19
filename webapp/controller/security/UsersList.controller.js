@@ -35,26 +35,28 @@ sap.ui.define([
             var oModel = new JSONModel();
             var that = this;
 
-            // En nuestro proyecto nosotros creamos un archivo llamado en.json para cargar la url de las apis
-            // Cambiar esto segun su backend
-            fetch("env.json")
-                .then(res => res.json())
-                .then(env => fetch(env.API_USERS_URL_BASE + "getallusers"))
-                .then(res => res.json())
-                .then(data => {
-                    data.value.forEach(user => {
-                        user.ROLES = that.formatRoles(user.ROLES);
-                    });
-                    oModel.setData(data);
-                    oTable.setModel(oModel);
-                })
-                .catch(err => {
-                    if(err.message === ("Cannot read properties of undefined (reading 'setModel')")){
-                        return;
-                    }else{
-                        MessageToast.show("Error al cargar usuarios: " + err.message);
-                    }      
-                });        
+            fetch("http://localhost:4004/api/security/crudUsers?action=get", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            }
+            })
+            .then(res => res.json())
+            .then(data => {
+                data.value.forEach(user => {
+                    user.ROLES = that.formatRoles(user.ROLES);
+                });
+                console.log(data);
+                oModel.setData(data);
+                oTable.setModel(oModel);
+            })
+            .catch(err => {
+                if(err.message === ("Cannot read properties of undefined (reading 'setModel')")){
+                    return;
+                }else{
+                    MessageToast.show("Error al cargar usuarios: " + err.message);
+                }      
+            });       
         },
 
         loadCompanies: function() {
@@ -77,15 +79,18 @@ sap.ui.define([
 
             // En nuestro proyecto nosotros creamos un archivo llamado en.json para cargar la url de las apis
             // Cambiar esto segun su backend
-            fetch("env.json")
-                .then(res => res.json())
-                .then(env => fetch(env.API_ROLES_URL_BASE + "getallroles"))
-                .then(res => res.json())
-                .then(data => {
-                    oRolesModel.setData({ roles: data.value });
-                    oView.setModel(oRolesModel);
-                })
-                .catch(err => MessageToast.show("Error al cargar roles: " + err.message));        
+            fetch("http://localhost:4004/api/security/crudRoles?action=get", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                oRolesModel.setData({ roles: data.value });
+                oView.setModel(oRolesModel);
+            })
+            .catch(err => MessageToast.show("Error al cargar roles: " + err.message));        
         },
 
 
@@ -239,6 +244,7 @@ sap.ui.define([
 
         deleteUser: function(UserId){
             // Aqui agregar la lógica para eliminar de la BD
+            console.log("Eliminando usuario con ID: " + UserId);
         },
 
         // ===================================================
