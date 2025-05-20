@@ -7,6 +7,7 @@
     xmlns:core="sap.ui.core"
     xmlns:viz="sap.viz.ui5.controls"
     xmlns:viz.data="sap.viz.ui5.data"
+    xmlns:mc="sap.suite.ui.microchart"
     xmlns:viz.feeds="sap.viz.ui5.controls.common.feeds"
     displayBlock="true"
 >
@@ -20,11 +21,12 @@
                 fragmentName="com.invertions.sapfiorimodinv.view.investments.fragments.SymbolSelector"
                 type="XML"
             />
+
             <ToolbarSpacer />
-            <!-- <Text
-                text="{= 'Balance: $' + ${strategyAnalysisModel>/balance} }"
-                class="customSuccessText sapUiSmallMarginBegin"
-            /> -->
+            <Text
+                text="{= 'Balance: $' + ${strategyAnalysisModel>/balance}}"
+                class="balance sapUiSmallMarginBegin"
+            />
         </headerContent>
         <content>
             <VBox class="sapUiResponsivePadding">
@@ -34,6 +36,7 @@
                     select=".onTabSelect"
                 >
                     <items>
+                        <!-- TABLA -->
                         <IconTabFilter
                             text="Table"
                             key="table"
@@ -44,6 +47,7 @@
                                 justifyContent="Start"
                                 width="100%"
                             >
+                                <!-- Tabla -->
                                 <VBox
                                     fitContainer="true"
                                     width="100%"
@@ -61,7 +65,8 @@
                                         <Table
                                             items="{strategyResultModel>/chart_data}"
                                             width="100%"
-                                            growing="false"
+                                            growing="true"
+                                            growingThreshold="100"
                                         >
                                             <columns>
                                                 <Column>
@@ -91,47 +96,56 @@
                                                 <Column>
                                                     <Text text="Rules" />
                                                 </Column>
+                                                <!-- Criterios -->
                                                 <Column>
                                                     <Text text="Shares" />
                                                 </Column>
+                                                <!-- Acciones -->
                                             </columns>
                                             <items>
-                                                <ColumnListItem>
-                                                    <Text
-                                                        text="{path: 'strategyResultModel>DATE', formatter: '.formatter.formatDateForTable'}"
-                                                    />
-                                                    <Text
-                                                        text="{strategyResultModel>OPEN}"
-                                                    />
-                                                    <Text
-                                                        text="{strategyResultModel>HIGH}"
-                                                    />
-                                                    <Text
-                                                        text="{strategyResultModel>LOW}"
-                                                    />
-                                                    <Text
-                                                        text="{strategyResultModel>CLOSE}"
-                                                    />
-                                                    <Text
-                                                        text="{strategyResultModel>VOLUME}"
-                                                    />
-                                                    <Text
-                                                        text="{strategyResultModel>INDICATORS}"
-                                                    />
-                                                    <Text
-                                                        text="{strategyResultModel>SIGNALS}"
-                                                    />
-                                                    <Text
-                                                        text="{strategyResultModel>RULES}"
-                                                    />
-                                                    <Text
-                                                        text="{strategyResultModel>SHARES}"
-                                                    />
+                                                <ColumnListItem
+                                                    type="Active"
+                                                    highlight="{= ${strategyResultModel>SIGNALS} === 'BUY' ? 'Success' : (${strategyResultModel>SIGNALS} === 'SELL' ? 'Error' : 'None') }"
+                                                >
+                                                    <cells>
+                                                        <Text
+                                                            text="{strategyResultModel>DATE}"
+                                                            class="{= ${strategyResultModel>SIGNALS} === 'BUY' ? 'rowBuy' : (${strategyResultModel>SIGNALS} === 'SELL' ? 'rowSell' : '') }"
+                                                        />
+                                                        <Text
+                                                            text="{strategyResultModel>OPEN}"
+                                                        />
+                                                        <Text
+                                                            text="{strategyResultModel>HIGH}"
+                                                        />
+                                                        <Text
+                                                            text="{strategyResultModel>LOW}"
+                                                        />
+                                                        <Text
+                                                            text="{strategyResultModel>CLOSE}"
+                                                        />
+                                                        <Text
+                                                            text="{strategyResultModel>VOLUME}"
+                                                        />
+                                                        <Text
+                                                            text="{strategyResultModel>INDICATORS}"
+                                                        />
+                                                        <Text
+                                                            text="{strategyResultModel>SIGNALS}"
+                                                        />
+                                                        <Text
+                                                            text="{strategyResultModel>RULES}"
+                                                        />
+                                                        <Text
+                                                            text="{strategyResultModel>SHARES}"
+                                                        />
+                                                    </cells>
                                                 </ColumnListItem>
                                             </items>
                                         </Table>
                                     </ScrollContainer>
                                 </VBox>
+                                <!-- Panel lateral solo análisis -->
                                 <VBox
                                     width="300px"
                                     class="sapUiSmallMarginBottom"
@@ -144,6 +158,7 @@
                                 </VBox>
                             </FlexBox>
                         </IconTabFilter>
+                        <!-- GRÁFICA -->
                         <IconTabFilter
                             text="Chart"
                             key="chart"
@@ -152,9 +167,10 @@
                                 renderType="Bare"
                                 alignItems="Stretch"
                                 justifyContent="Start"
-                                height="600px"
+                                height="auto"
                                 width="100%"
                             >
+                                <!-- Gráfica -->
                                 <VBox
                                     fitContainer="true"
                                     height="100%"
@@ -169,7 +185,7 @@
                                         width="100%"
                                         class="sapUiSizeCompact"
                                         expandable="false"
-                                        expanded="true"
+                                        expanded="false"
                                     >
                                         <headerToolbar>
                                             <OverflowToolbar>
@@ -180,52 +196,52 @@
                                                 <Button
                                                     icon="sap-icon://refresh"
                                                     tooltip="Actualizar datos"
-                                                    press=".onRunAnalysisPress"
+                                                    press=".onRefreshChart"
                                                 />
                                             </OverflowToolbar>
                                         </headerToolbar>
                                         <content>
                                             <viz:VizFrame
                                                 id="idVizFrame"
-                                                vizType="line"
-                                                width="100%"
-                                                height="100%"
+                                                vizType="timeseries_line"
+                                                width="auto"
                                                 uiConfig="{applicationSet:'fiori'}"
                                                 busy="{= !${strategyResultModel>/chart_data} || ${strategyResultModel>/chart_data}.length === 0 }"
-                                                busyIndicatorDelay="0"
                                                 visible="true"
+                                                busyIndicatorDelay="0"
                                                 selectData=".onDataPointSelect"
                                             >
                                                 <viz:dataset>
                                                     <viz.data:FlattenedDataset
-                                                        data="{/chartData}"
+                                                        data="{strategyResultModel>/chart_data}"
                                                     >
                                                         <viz.data:dimensions>
                                                             <viz.data:DimensionDefinition
                                                                 name="Fecha"
-                                                                value="{DATE}"
+                                                                value="{strategyResultModel>DATE_GRAPH}"
+                                                                dataType="date"
                                                             />
                                                         </viz.data:dimensions>
                                                         <viz.data:measures>
                                                             <viz.data:MeasureDefinition
-                                                                name="Open"
-                                                                value="{OPEN}"
+                                                                name="PrecioCierre"
+                                                                value="{strategyResultModel>CLOSE}"
+                                                            />
+                                                            <viz.data:MeasureDefinition
+                                                                name="PrecioInicial"
+                                                                value="{strategyResultModel>OPEN}"
                                                             />
                                                             <viz.data:MeasureDefinition
                                                                 name="High"
-                                                                value="{HIGH}"
+                                                                value="{strategyResultModel>HIGH}"
                                                             />
                                                             <viz.data:MeasureDefinition
                                                                 name="Low"
-                                                                value="{LOW}"
+                                                                value="{strategyResultModel>LOW}"
                                                             />
                                                             <viz.data:MeasureDefinition
-                                                                name="Close"
-                                                                value="{CLOSE}"
-                                                            />
-                                                            <viz.data:MeasureDefinition
-                                                                name="Volume"
-                                                                value="{VOLUME}"
+                                                                name="SMA"
+                                                                value="{strategyResultModel>SMA}"
                                                             />
                                                         </viz.data:measures>
                                                     </viz.data:FlattenedDataset>
@@ -237,35 +253,16 @@
                                                         values="Fecha"
                                                     />
                                                     <viz.feeds:FeedItem
-                                                        uid="closeAxis"
+                                                        uid="valueAxis"
                                                         type="Measure"
-                                                        values="Close"
-                                                    />
-                                                    <viz.feeds:FeedItem
-                                                        uid="openAxis"
-                                                        type="Measure"
-                                                        values="Open"
-                                                    />
-                                                    <viz.feeds:FeedItem
-                                                        uid="highAxis"
-                                                        type="Measure"
-                                                        values="High"
-                                                    />
-                                                    <viz.feeds:FeedItem
-                                                        uid="lowAxis"
-                                                        type="Measure"
-                                                        values="Low"
-                                                    />
-                                                    <viz.feeds:FeedItem
-                                                        uid="volumeAxis"
-                                                        type="Measure"
-                                                        values="Volume"
+                                                        values="PrecioCierre,PrecioInicial,High,Low,SMA"
                                                     />
                                                 </viz:feeds>
                                             </viz:VizFrame>
                                         </content>
                                     </Panel>
                                 </VBox>
+                                <!-- Panel lateral análisis y resultados -->
                                 <VBox
                                     width="300px"
                                     class="sapUiSmallMarginBottom"
@@ -277,15 +274,15 @@
                                     />
                                 </VBox>
                             </FlexBox>
+                            <VBox width="auto">
+                                <core:Fragment
+                                    fragmentName="com.invertions.sapfiorimodinv.view.investments.fragments.StrategyResultPanel"
+                                    type="XML"
+                                />
+                            </VBox>
                         </IconTabFilter>
                     </items>
                 </IconTabBar>
-                <VBox width="auto">
-                    <core:Fragment
-                        fragmentName="com.invertions.sapfiorimodinv.view.investments.fragments.StrategyResultPanel"
-                        type="XML"
-                    />
-                </VBox>
             </VBox>
         </content>
     </Page>

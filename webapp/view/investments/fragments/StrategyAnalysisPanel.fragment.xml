@@ -52,7 +52,7 @@
                             width="100%"
                             renderType="Bare"
                             class="sapUiTinyMarginTop"
-                            visible="{= ${strategyAnalysisModel>/strategyKey} !== 'ReversionSimple' }"
+                            visible="{= ${strategyAnalysisModel>/strategyKey} !== 'Reversión Simple' }"
                         >
                             <VBox width="48%">
                                 <Label text="{i18n>longSMALabelText}" />
@@ -75,6 +75,20 @@
                                 />
                             </VBox>
                         </HBox>
+
+                        <VBox
+                            width="100%"
+                            visible="{= ${strategyAnalysisModel>/strategyKey} === 'Reversión Simple' }"
+                        >
+                            <Label text="{i18n>simpleRSILabelText}" />
+                            <Input
+                                id="simpleRSIInputInFragment"
+                                value="{strategyAnalysisModel>/simpleRSI}"
+                                type="Number"
+                                placeholder="Ej: 14"
+                                width="100%"
+                            />
+                        </VBox>
 
                         <VBox width="100%">
                             <Label text="{i18n>startDateLabelText}" />
@@ -117,19 +131,6 @@
                                 placeholder="Ej: 10"
                                 width="100%"
                                 class=""
-                            />
-                        </VBox>
-
-                        <VBox
-                            visible="{= ${strategyAnalysisModel>/strategyKey} === 'ReversionSimple' }"
-                        >
-                            <Label text="{i18n>simpleRSILabelText}" />
-                            <Input
-                                id="simpleRSIInputInFragment"
-                                value="{strategyAnalysisModel>/simpleRSI}"
-                                type="Number"
-                                placeholder="Ej: 14"
-                                width="100%"
                             />
                         </VBox>
 
