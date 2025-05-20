@@ -313,7 +313,7 @@ sap.ui.define(
             chart_data: this._prepareTableData(
               simulationData?.chart_data || [],
               simulationData?.signals || [],
-              simulationData?.signals || [] // Use signals for transactions
+              simulationData?.historicalPrices || [] // Use signals for transactions
             ),
             signals: simulationData?.signals || [],
             result: simulationData?.result || 0, // Use result from simulation data
@@ -339,7 +339,7 @@ sap.ui.define(
           );
         },
 
-        _prepareTableData: function (aData, aSignals, aTransactions) {
+        _prepareTableData: function (aData, aSignals, aHistoricalPrices) {
           if (!Array.isArray(aData)) return [];
 
           const oDateFormat = DateFormat.getDateInstance({
@@ -348,8 +348,30 @@ sap.ui.define(
           let currentShares = 0; // Track shares in real-time.
 
           return aData.map((oItem) => {
-            const oDate = oItem.Date ? new Date(oItem.Date) : null; // Use 'Date' from historicalPrices
+            const oDate = oItem.Date ? new Date(oItem.Date) : null;
             const sDateKey = oDate ? oDate.toISOString() : "";
+
+            let smaValue = null;
+            let rsiValue = null;
+
+            // Find the corresponding historical price item for this date to get Indicators
+            const oHistoricalPriceItem = aHistoricalPrices.find((hpItem) => {
+              const hpDate = hpItem.Date ? new Date(hpItem.Date) : null;
+              return hpDate && hpDate.toISOString() === sDateKey;
+            });
+
+            // Parse the "Indicators" string from the historical price item to extract SMA and RSI values
+            if (oHistoricalPriceItem && oHistoricalPriceItem.Indicators) {
+              const indicatorParts =
+                oHistoricalPriceItem.Indicators.split(", ");
+              indicatorParts.forEach((part) => {
+                if (part.startsWith("SMA:")) {
+                  smaValue = parseFloat(part.replace("SMA: ", ""));
+                } else if (part.startsWith("RSI:")) {
+                  rsiValue = parseFloat(part.replace("RSI: ", ""));
+                }
+              });
+            }
 
             // Find the signal for this date
             const oSignal = aSignals.find((signal) => {
@@ -357,23 +379,10 @@ sap.ui.define(
               return signalDate && signalDate.toISOString() === sDateKey;
             });
 
-            // Find the transaction for this date
-            const oTransaction = aTransactions.find((transaction) => {
-              const transactionDate = transaction.date
-                ? new Date(transaction.date)
-                : null;
-              return (
-                transactionDate && transactionDate.toISOString() === sDateKey
-              );
-            });
+            // Find the transaction for this date (using aHistoricalPrices as aTransactions, as per user's _handleAnalysisResponse)
 
             // Update shareholdings based on transactions
-            if (oTransaction) {
-              currentShares =
-                oTransaction.unitsBought !== undefined
-                  ? oTransaction.unitsBought
-                  : 0;
-            }
+
             return {
               DATE: oDate ? oDateFormat.format(oDate) : "",
               DATE_GRAPH: oDate,
@@ -382,10 +391,11 @@ sap.ui.define(
               LOW: oItem.Low,
               CLOSE: oItem.Close,
               VOLUME: oItem.Volume,
-              INDICATORS: oItem.Indicators,
+              INDICATORS: oHistoricalPriceItem?.Indicators || "-", // Now correctly pulling from historicalPrices
+
               SIGNALS: oSignal?.signal?.toUpperCase() || "-",
               RULES: oSignal?.reasoning || "-",
-              SHARES: currentShares.toFixed(4),
+              SHARES: currentShares.toFixed(4), // Price for sell signal point on chart
             };
           });
         },
