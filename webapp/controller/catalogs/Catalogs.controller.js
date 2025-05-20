@@ -24,8 +24,8 @@ sap.ui.define(
           this._oDialog = null;
 
           $.ajax({
-            url: "http://localhost:4004/api/sec/getall",
-            method: "GET",
+            url: "http://localhost:4004/api/security/crudLabels?action=get",
+            method: "POST",
             success: function (data) {
               oModel.setData({ value: data.value });
               that.getView().setModel(oModel);
@@ -408,13 +408,13 @@ sap.ui.define(
 
           var sLabelID = oSelectedData.LABELID;
           var sUrl =
-            "http://localhost:4004/api/sec/valuesCRUD?procedure=get&labelID=" +
+            "http://localhost:4004/api/security/crudValues?action=get&labelid=" +
             encodeURIComponent(sLabelID);
           var that = this;
 
           $.ajax({
             url: sUrl,
-            method: "GET",
+            method: "POST",
             dataType: "json",
             success: function (response) {
               var oValuesView = that.byId("XMLViewValues");
