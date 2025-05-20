@@ -83,6 +83,7 @@ sap.ui.define(
               endDate: null,
               controlsVisible: false,
               strategies: [], // Will be populated in _loadI18nTexts
+              investmentAmount: 1000, // Agregado: Valor por defecto, se puede cambiar en la UI
             }),
             "strategyAnalysisModel"
           );
@@ -272,8 +273,11 @@ sap.ui.define(
           const sSpecs = `SHORT:${oStrategyModel.getProperty(
             "/shortSMA"
           )}&LONG:${oStrategyModel.getProperty("/longSMA")}`;
+          // Get investmentAmount from the model
+          const initialInvestment =
+            oStrategyModel.getProperty("/investmentAmount");
 
-          const sUrl = `${this._CONSTANTS.API_ENDPOINT}?action=${this._CONSTANTS.SIMULATION_ACTION}&symbol=${sSymbol}&initial_investment=${this._CONSTANTS.DEFAULT_BALANCE}&simulationName=ReversionSimple&startDate=${sStartDate}&endDate=${sEndDate}&rsiPeriod=14&specs=${sSpecs}`;
+          const sUrl = `${this._CONSTANTS.API_ENDPOINT}?action=${this._CONSTANTS.SIMULATION_ACTION}&symbol=${sSymbol}&initial_investment=${initialInvestment}&simulationName=ReversionSimple&startDate=${sStartDate}&endDate=${sEndDate}&rsiPeriod=14&specs=${sSpecs}`;
 
           fetch(sUrl, {
             method: "POST",
