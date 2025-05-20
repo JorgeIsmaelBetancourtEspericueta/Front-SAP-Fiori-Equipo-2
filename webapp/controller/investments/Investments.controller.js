@@ -277,7 +277,9 @@ sap.ui.define(
           const initialInvestment =
             oStrategyModel.getProperty("/investmentAmount");
 
-          const sUrl = `${this._CONSTANTS.API_ENDPOINT}?action=${this._CONSTANTS.SIMULATION_ACTION}&symbol=${sSymbol}&initial_investment=${initialInvestment}&simulationName=ReversionSimple&startDate=${sStartDate}&endDate=${sEndDate}&rsiPeriod=14&specs=${sSpecs}`;
+          const rsiPeriod = oStrategyModel.getProperty("/simpleRSI");
+
+          const sUrl = `${this._CONSTANTS.API_ENDPOINT}?action=${this._CONSTANTS.SIMULATION_ACTION}&symbol=${sSymbol}&initial_investment=${initialInvestment}&simulationName=ReversionSimple&startDate=${sStartDate}&endDate=${sEndDate}&rsiPeriod=${rsiPeriod}`;
 
           fetch(sUrl, {
             method: "POST",
