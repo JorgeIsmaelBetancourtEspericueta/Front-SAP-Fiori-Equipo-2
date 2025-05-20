@@ -243,8 +243,36 @@ sap.ui.define([
         },
 
         deleteUser: function(UserId){
-            // Aqui agregar la lógica para eliminar de la BD
-            console.log("Eliminando usuario con ID: " + UserId);
+            var that = this;
+            fetch(`http://localhost:4004/api/security/deleteAny?borrado=fisic&userid=${encodeURIComponent(UserId)}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+            .then(async response => {
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error("Error al eliminar usuario: " + errorText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                MessageToast.show("Usuario eliminado correctamente");
+                // Se actualiza el modelo localmente sin volver a llamar a la API
+                var oTable = that.byId("IdTable1UsersManageTable");
+                var oModel = oTable.getModel();
+                var oData = oModel.getData();
+                var user = oData.value.find(u => u.USERID === UserId);
+                if (user) {
+                    user.DETAIL_ROW.DELETED = true;
+                    user.DETAIL_ROW.ACTIVED = false;
+                }
+                oModel.setData(oData);
+            })
+            .catch(error => {
+                MessageBox.error("No se pudo eliminar el usuario:\n" + error.message);
+            });
         },
 
         // ===================================================
@@ -272,7 +300,35 @@ sap.ui.define([
         },
 
         desactivateUser: function(UserId){
-            // Aqui agregar la lógica para desactivar al usuario
+            var that = this;
+            fetch(`http://localhost:4004/api/security/deleteAny?borrado=logic&userid=${encodeURIComponent(UserId)}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+            .then(async response => {
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error("Error al desactivar usuario: " + errorText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                MessageToast.show("Usuario desactivado correctamente");
+                // Se actualiza el modelo localmente sin volver a llamar a la API
+                var oTable = that.byId("IdTable1UsersManageTable");
+                var oModel = oTable.getModel();
+                var oData = oModel.getData();
+                var user = oData.value.find(u => u.USERID === UserId);
+                if (user) {
+                    user.DETAIL_ROW.ACTIVED = false;
+                }
+                oModel.setData(oData);
+            })
+            .catch(error => {
+                MessageBox.error("No se pudo desactivar el usuario:\n" + error.message);
+            });
         },
 
 

@@ -43,13 +43,16 @@
                         />
                     </ComboBox>
 
-                    <VBox visible="{strategyAnalysisModel>/controlsVisible}">
+                    <VBox
+                        id="__vbox9"
+                        visible="{strategyAnalysisModel>/controlsVisible}"
+                    >
                         <HBox
                             justifyContent="SpaceBetween"
                             width="100%"
                             renderType="Bare"
                             class="sapUiTinyMarginTop"
-                            visible="{= ${strategyAnalysisModel>/strategyKey} !== 'ReversionSimple' }"
+                            visible="{= ${strategyAnalysisModel>/strategyKey} !== 'Reversión Simple' }"
                         >
                             <VBox width="48%">
                                 <Label text="{i18n>longSMALabelText}" />
@@ -73,12 +76,27 @@
                             </VBox>
                         </HBox>
 
+                        <VBox
+                            width="100%"
+                            visible="{= ${strategyAnalysisModel>/strategyKey} === 'Reversión Simple' }"
+                        >
+                            <Label text="{i18n>simpleRSILabelText}" />
+                            <Input
+                                id="simpleRSIInputInFragment"
+                                value="{strategyAnalysisModel>/simpleRSI}"
+                                type="Number"
+                                placeholder="Ej: 14"
+                                width="100%"
+                            />
+                        </VBox>
+
                         <VBox width="100%">
                             <Label text="{i18n>startDateLabelText}" />
                             <DatePicker
                                 id="startDatePickerInFragment"
                                 value="{
-                                    path: 'strategyAnalysisModel>/startDate', type: 'sap.ui.model.type.Date',
+                                    path: 'strategyAnalysisModel>/startDate',
+                                    type: 'sap.ui.model.type.Date',
                                     formatOptions: { pattern: 'yyyy-MM-dd' }
                                 }"
                                 displayFormat="long"
@@ -90,7 +108,8 @@
                             <DatePicker
                                 id="endDatePickerInFragment"
                                 value="{
-                                    path: 'strategyAnalysisModel>/endDate', type: 'sap.ui.model.type.Date',
+                                    path: 'strategyAnalysisModel>/endDate',
+                                    type: 'sap.ui.model.type.Date',
                                     formatOptions: { pattern: 'yyyy-MM-dd' }
                                 }"
                                 displayFormat="long"
@@ -98,34 +117,20 @@
                             />
                         </VBox>
 
-                        <VBox
-                            visible="{= ${strategyAnalysisModel>/strategyKey} !== 'ReversionSimple' }"
-                        >
+                        <VBox>
                             <Label
                                 class="sapUiTinyMarginTop"
-                                text="Cantidad de acciones"
+                                text="{i18n>investmentAmountLabelText}"
                             />
                             <StepInput
-                                value="{strategyAnalysisModel>/stock}"
-                                min="1"
-                                step="1"
+                                id="investmentAmountInputInFragment"
+                                value="{strategyAnalysisModel>/investmentAmount}"
+                                min="1000"
+                                step="100"
                                 displayValuePrecision="0"
                                 placeholder="Ej: 10"
                                 width="100%"
                                 class=""
-                            />
-                        </VBox>
-
-                        <VBox
-                            visible="{= ${strategyAnalysisModel>/strategyKey} === 'ReversionSimple' }"
-                        >
-                            <Label text="{i18n>simpleRSILabelText}" />
-                            <Input
-                                id="simpleRSIInputInFragment"
-                                value="{strategyAnalysisModel>/simpleRSI}"
-                                type="Number"
-                                placeholder="Ej: 14"
-                                width="100%"
                             />
                         </VBox>
 
