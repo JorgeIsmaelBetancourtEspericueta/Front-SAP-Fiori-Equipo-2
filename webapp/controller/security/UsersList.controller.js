@@ -259,15 +259,11 @@ sap.ui.define([
             })
             .then(data => {
                 MessageToast.show("Usuario eliminado correctamente");
-                // Se actualiza el modelo localmente sin volver a llamar a la API
+                // Elimina el usuario del array y actualiza el modelo
                 var oTable = that.byId("IdTable1UsersManageTable");
                 var oModel = oTable.getModel();
                 var oData = oModel.getData();
-                var user = oData.value.find(u => u.USERID === UserId);
-                if (user) {
-                    user.DETAIL_ROW.DELETED = true;
-                    user.DETAIL_ROW.ACTIVED = false;
-                }
+                oData.value = oData.value.filter(u => u.USERID !== UserId);
                 oModel.setData(oData);
             })
             .catch(error => {
