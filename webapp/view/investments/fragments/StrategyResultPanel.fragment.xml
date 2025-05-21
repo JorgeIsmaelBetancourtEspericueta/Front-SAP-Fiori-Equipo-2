@@ -27,7 +27,7 @@
                         text="Simbolo:"
                         class="sapUiTinyMarginEnd"
                     />
-                    <Text text="{oSymbolModel>/selectedSymbol}" />
+                    <Text text="{strategyResultModel>/symbol}" />
                 </HBox>
                 <HBox justifyContent="SpaceBetween">
                     <Label
@@ -67,10 +67,7 @@
                         class="sapUiTinyMarginEnd"
                     />
                     <Text
-                        text="{
-                        parts: ['strategyResultModel>/signals', 'buy'],
-                        formatter: '.formatSignalCount'
-                    }"
+                        text="{strategyResultModel>/compradas}"
                         class="successText"
                     />
                 </HBox>
@@ -80,10 +77,7 @@
                         class="sapUiTinyMarginEnd"
                     />
                     <Text
-                        text="{
-                        parts: ['strategyResultModel>/signals', 'sell'],
-                        formatter: '.formatSignalCount'
-                    }"
+                        text="{strategyResultModel>/vendidas}"
                         class="errorText"
                     />
                 </HBox>
@@ -114,7 +108,7 @@
                         class="sapUiTinyMarginEnd"
                     />
                     <ObjectStatus
-                        text="{strategyResultModel>/signals/0/type}"
+                        text="{strategyResultModel>/typeLastOp}"
                         state="{
                             path: 'strategyResultModel>/signals/0/type',
                             formatter: '.formatSignalState'
@@ -126,11 +120,12 @@
                         text="Precio:"
                         class="sapUiTinyMarginEnd"
                     />
-                    <Text
-                        text="{
-                        path: 'strategyResultModel>/signals/0/price',
-                        formatter: '.formatSignalPrice'
-                    }"
+                    <ObjectStatus
+                        text="{strategyResultModel>/priceLastOp}"
+                        state="{
+                            path: 'strategyResultModel>/signals/0/type',
+                            formatter: '.formatSignalState'
+                        }"
                     />
                 </HBox>
                 <HBox justifyContent="SpaceBetween">
@@ -138,9 +133,12 @@
                         text="Razón:"
                         class="sapUiTinyMarginEnd"
                     />
-                    <Text
-                        text="{strategyResultModel>/signals/0/reasoning}"
-                        wrapping="true"
+                    <ObjectStatus
+                        text="{strategyResultModel>/reasonigLastOp}"
+                        state="{
+                            path: 'strategyResultModel>/signals/0/type',
+                            formatter: '.formatSignalState'
+                        }"
                     />
                 </HBox>
             </VBox>

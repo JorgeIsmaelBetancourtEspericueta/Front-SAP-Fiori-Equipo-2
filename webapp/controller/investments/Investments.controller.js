@@ -279,6 +279,11 @@ sap.ui.define(
 
           const rsiPeriod = oStrategyModel.getProperty("/simpleRSI");
 
+          if (!rsiPeriod) {
+            MessageBox.warning("Ingrese en la RSI Simple");
+            return false;
+          }
+
           const sUrl = `${this._CONSTANTS.API_ENDPOINT}?action=${this._CONSTANTS.SIMULATION_ACTION}&symbol=${sSymbol}&initial_investment=${initialInvestment}&simulationName=ReversionSimple&startDate=${sStartDate}&endDate=${sEndDate}&rsiPeriod=${rsiPeriod}`;
 
           fetch(sUrl, {
@@ -306,6 +311,7 @@ sap.ui.define(
           }
           console.log("Datos para la gráfica:", simulationData?.chart_data);
           console.log("Señales:", simulationData?.signals);
+          var oView = this.getView();
 
           // Actualizar modelo de resultados
           oResultModel.setData({
@@ -319,13 +325,17 @@ sap.ui.define(
             result: simulationData?.result || 0, // Use result from simulation data
             simulationName:
               simulationData?.simulationName || "Moving Average Crossover", // keep simulation name
-            symbol:
-              simulationData?.symbol || oStrategyModel.getProperty("/symbol"), // Get symbol from response
+            symbol: simulationData?.symbol, // Get symbol from response
             startDate:
               simulationData?.startDate ||
               oStrategyModel.getProperty("/startDate"),
             endDate:
               simulationData?.endDate || oStrategyModel.getProperty("/endDate"),
+            compradas: simulationData?.summary?.totalBoughtUnits,
+            vendidas: simulationData?.summary?.totalSoldUnits,
+            typeLastOp: simulationData?.lastOperation?.type,
+            priceLastOp: simulationData?.lastOperation?.price,
+            reasonigLastOp: simulationData?.lastOperation?.reasoning,
           });
 
           // Actualizar balance
