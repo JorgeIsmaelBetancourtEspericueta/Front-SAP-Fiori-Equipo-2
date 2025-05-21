@@ -60,7 +60,24 @@ sap.ui.define([
         },
 
         loadCompanies: function() {
-            //Agregar lógica para cargar compañias
+            var oView = this.getView();
+            var oCompaniesModel = new JSONModel();
+
+            fetch("http://localhost:4004/api/security/crudValues?action=get&labelid=IdCompanies", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                oCompaniesModel.setData({ companies: data.value });
+                oView.setModel(oCompaniesModel, "companiesModel"); // Usa un modelo nombrado
+            })
+            .catch(err => MessageToast.show("Error al cargar compañías: " + err.message));
+        },
+
+        onCompanySelected: function(oEvent) {
         },
 
         loadDeptos: function(){
@@ -162,6 +179,7 @@ sap.ui.define([
                     this._oCreateUserDialog = oDialog;
                     oView.addDependent(oDialog);
                     this.loadRoles();
+                    this.loadCompanies();
                     this._oCreateUserDialog.open();
                 });
             } else {
@@ -170,8 +188,118 @@ sap.ui.define([
             
         },
 
-        onSaveUser: function(){
-            //Aquí la lógica para agregar el usuario
+        onSaveUser: function() {
+            var oView = this.getView();
+
+            // Obtén los valores de los inputs
+            var oDialog = oView.byId("AddUserDialog") || sap.ui.core.Fragment.byId(oView.getId(), "AddUserDialog");
+            var getInput = function(id) {
+                /** @type {sap.m.Input} */
+                var input = /** @type {sap.m.Input} */ (sap.ui.core.Fragment.byId(oView.getId(), id));
+                return input.getValue();
+            };
+
+            var USERID = getInput("inputUserId");
+            var USERNAME = getInput("inputUsername");
+            var ALIAS = getInput("inputAlias");
+            var FIRSTNAME = getInput("inputFirstName");
+            var LASTNAME = getInput("inputLastName");
+            var oDatePicker = /** @type {sap.m.DatePicker} */ (sap.ui.core.Fragment.byId(oView.getId(), "inputUserBirthdayDate"));
+            var BIRTHDAYDATE = oDatePicker.getDateValue();
+            /** @type {sap.m.ComboBox} */
+            var oComboBox = /** @type {sap.m.ComboBox} */ (sap.ui.core.Fragment.byId(oView.getId(), "comboBoxCompanies"));
+            var VID = oComboBox.getSelectedKey();
+            // Obtén el objeto de la compañía seleccionada
+            var oCompaniesModel = oView.getModel("companiesModel");
+            var aCompanies = oCompaniesModel.getProperty("/companies");
+            var oSelectedCompany = aCompanies.find(function(company) {
+                return company.VALUEID == VID;
+            });
+            // Extrae los valores directamente del objeto seleccionado
+            var COMPANYID = oSelectedCompany ? oSelectedCompany.COMPANYID : "";
+            var COMPANYNAME = oSelectedCompany ? oSelectedCompany.VALUE : "";
+            var COMPANYALIAS = oSelectedCompany ? oSelectedCompany.ALIAS : "";
+            var CEDIID = oSelectedCompany ? String(oSelectedCompany.CEDIID) : "";
+
+            var EMPLOYEEID = getInput("inputEmployeeId");
+            var EMAIL = getInput("inputUserEmail");
+            var PHONENUMBER = getInput("inputUserPhoneNumber");
+            var EXTENSION = getInput("inputUserExtension");
+            var DEPARTMENT = getInput("inputUserDepartment");
+            var FUNCTION = getInput("inputUserFunction");
+            var STREET = getInput("inputUserStreet");
+            var POSTALCODE = parseInt(getInput("inputUserPostalCode"), 10);
+            var CITY = getInput("inputUserCity");
+            var REGION = getInput("inputUserRegion");
+            var STATE = getInput("inputUserState");
+            var COUNTRY = getInput("inputUserCountry");
+
+            // Obtener roles seleccionados
+            var oVBox = /** @type {sap.m.VBox} */ (sap.ui.core.Fragment.byId(oView.getId(), "selectedRolesVBox"));
+            var ROLES = oVBox.getItems().map(function(oItem) {
+                return { ROLEID: oItem.data("roleId") };
+            });
+
+            // Formatea la fecha si es necesario
+            var sBirthday = "";
+            if (BIRTHDAYDATE) {
+                var day = String(BIRTHDAYDATE.getDate()).padStart(2, '0');
+                var month = String(BIRTHDAYDATE.getMonth() + 1).padStart(2, '0');
+                var year = BIRTHDAYDATE.getFullYear();
+                sBirthday = `${day}.${month}.${year}`;
+            }
+
+            // Construye el objeto usuario
+            var oUser = {
+                USERID,
+                USERNAME,
+                ALIAS,
+                FIRSTNAME,
+                LASTNAME,
+                BIRTHDAYDATE: sBirthday,
+                COMPANYID,
+                COMPANYNAME,
+                COMPANYALIAS,
+                CEDIID,
+                EMPLOYEEID,
+                EMAIL,
+                PHONENUMBER,
+                EXTENSION,
+                DEPARTMENT,
+                FUNCTION,
+                STREET,
+                POSTALCODE,
+                CITY,
+                REGION,
+                STATE,
+                COUNTRY,
+                ROLES
+            };
+            console.log(JSON.stringify(oUser));
+
+            // Llama a la API para guardar el usuario
+            fetch("http://localhost:4004/api/security/crudUsers?action=create", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({users : oUser})
+            })
+            .then(async response => {
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error("Error al guardar usuario: " + errorText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                MessageToast.show("Usuario guardado correctamente");
+                this._oCreateUserDialog.close();
+                this.loadUsers();
+            })
+            .catch(error => {
+                MessageBox.error("No se pudo guardar el usuario:\n" + error.message);
+            });
         },
 
         onCancelUser: function(){

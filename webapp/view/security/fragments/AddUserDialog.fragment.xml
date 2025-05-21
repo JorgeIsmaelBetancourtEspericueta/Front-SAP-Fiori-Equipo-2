@@ -11,21 +11,49 @@
         <VBox id="AddUserDialogVbox" class="sapUiSmallMargin">
             <Input id="inputUserId" placeholder="ID de Usuario"/>
 
-            <Input id="inputUsername" placeholder="Nombre Completo"/>
+            <Input id="inputUsername" placeholder="Nombre de usuario"/>
+
+            <Input id="inputAlias" placeholder="Alias"/>
+
+            <Input id="inputFirstName" placeholder="Nombre"/>
+
+            <Input id="inputLastName" placeholder="Apellidos"/>
+
+            <DatePicker id="inputUserBirthdayDate" placeholder="Fecha de nacimiento"/>
+
+            <ComboBox id="comboBoxCompanies"
+                items="{companiesModel>/companies}"
+                selectionChange="onCompanySelected"
+                placeholder="Compañía">
+                <core:Item key="{companiesModel>VALUEID}" text="{companiesModel>VALUE}" />
+            </ComboBox>
             
+            <Input id="inputUserDepartment" placeholder="Departamento"/>
+            <!--<ComboBox id="comboBoxCedis" items="{/cedis}" selectionChange="onCediSelected" placeholder="Departamento">
+                <core:Item id="CediItem" key="{CEDIID}" text="{CEDINAME}" />
+            </ComboBox> -->
+
+            <Input id="inputEmployeeId" placeholder="ID de Empleado"/>
+
             <Input id="inputUserPhoneNumber" placeholder="Número telefónico"/>
 
             <Input id="inputUserEmail" placeholder="Correo Electrónico"/>
 
-            <DatePicker id="inputUserBirthdayDate" placeholder="Fecha de nacimiento"/>
+            <Input id="inputUserExtension" placeholder="Extensión"/>
 
-            <ComboBox id="comboBoxCompanies" items="{/companies}" selectionChange="onCompanySelected" placeholder="Compañía">
-                <core:Item id="CompanyItem" key="{COMPANYID}" text="{COMPANYNAMME}" />
-            </ComboBox>
-            
-            <ComboBox id="comboBoxCedis" items="{/cedis}" selectionChange="onCediSelected" placeholder="Departamento">
-                <core:Item id="CediItem" key="{CEDIID}" text="{CEDINAME}" />
-            </ComboBox>
+            <Input id="inputUserFunction" placeholder="Función que ejerce"/>
+
+            <Input id="inputUserStreet" placeholder="Calle"/>
+
+            <Input id="inputUserPostalCode" placeholder="Código Postal" type="Number"/>
+
+            <Input id="inputUserCity" placeholder="Ciudad"/>
+
+            <Input id="inputUserRegion" placeholder="Región"/>
+
+            <Input id="inputUserState" placeholder="Estado"/>
+
+            <Input id="inputUserCountry" placeholder="País"/>
 
             <ComboBox id="comboBoxRoles" items="{/roles}" selectionChange="onRoleSelected" placeholder="Selecciona un Rol">
                 <core:Item id="RoleItem" key="{ROLEID}" text="{ROLENAME}" />
@@ -34,8 +62,6 @@
             <VBox id="selectedRolesVBox" class="sapUiSmallMarginTop">
                 <!--VBOx donde va añadiendo los roles -->
             </VBox>
-            
-            <Input id="inputUserFunction" placeholder="Función que ejerce"/>
 
         </VBox>
 
