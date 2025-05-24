@@ -78,10 +78,32 @@ sap.ui.define([
         },
 
         onCompanySelected: function(oEvent) {
+            var oComboBox = oEvent.getSource();
+            var sSelectedKey = oComboBox.getSelectedKey();
+
+            this.loadDeptos(sSelectedKey);
         },
 
-        loadDeptos: function(){
-            //Agregar lógica para cargar deptos según la compañía
+        loadDeptos: function(companyId){
+            var oView = this.getView();
+            var oDeptosModel = new JSONModel();
+
+            fetch("http://localhost:4004/api/security/crudValues?action=get&labelid=IdDepartments", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                // Filtramos los departamentos que correspondan a la empresa seleccionada
+                var filtered = data.value.filter(function(depto) {
+                    return depto.VALUEPAID === `IdCompanies-${companyId}`;
+                });
+                oDeptosModel.setData({ cedis: filtered });
+                oView.setModel(oDeptosModel, "deptosModel");
+            })
+            .catch(err => MessageToast.show("Error al cargar departamentos: " + err.message));
         },
 
 
@@ -177,12 +199,13 @@ sap.ui.define([
             ALIAS: "",
             FIRSTNAME: "",
             LASTNAME: "",
-            //BALANCE: 0,
+            BALANCE: 0,
             BIRTHDAYDATE: null,
             EMPLOYEEID: "",
             EMAIL: "",
             PHONENUMBER: "",
             EXTENSION: "",
+            AVATAR: "",
             DEPARTMENT: "",
             FUNCTION: "",
             STREET: "",
@@ -230,7 +253,19 @@ sap.ui.define([
             var COMPANYID = oSelectedCompany ? oSelectedCompany.COMPANYID : "";
             var COMPANYNAME = oSelectedCompany ? oSelectedCompany.VALUE : "";
             var COMPANYALIAS = oSelectedCompany ? oSelectedCompany.ALIAS : "";
-            var CEDIID = oSelectedCompany ? String(oSelectedCompany.CEDIID) : "";
+
+            // Obtener el departamento seleccionado
+            /** @type {sap.m.ComboBox} */
+            var oComboBoxDepto = /** @type {sap.m.ComboBox} */ (sap.ui.core.Fragment.byId(oView.getId(), "comboBoxCedis"));
+            var DEPTOID = oComboBoxDepto.getSelectedKey();
+            var oDeptosModel = oView.getModel("deptosModel");
+            var aDeptos = oDeptosModel.getProperty("/cedis");
+            var oSelectedDepto = aDeptos.find(function(depto) {
+                return depto.VALUEID == DEPTOID;
+            });
+            // Extraer los valores del departamento seleccionado
+            var DEPARTMENT = oSelectedDepto ? oSelectedDepto.VALUE : "";
+            var CEDIID = oSelectedDepto ? String(oSelectedDepto.CEDIID) : "";
 
             // Obtener roles seleccionados
             /** @type {sap.m.VBox} */
@@ -258,18 +293,19 @@ sap.ui.define([
                 ALIAS: oData.ALIAS,
                 FIRSTNAME: oData.FIRSTNAME,
                 LASTNAME: oData.LASTNAME,
+                EMPLOYEEID: oData.EMPLOYEEID,
+                EXTENSION: oData.EXTENSION,
+                PHONENUMBER: oData.PHONENUMBER,
+                EMAIL: oData.EMAIL,
                 BIRTHDAYDATE: sBirthday,
+                AVATAR: oData.AVATAR,
                 COMPANYID,
                 COMPANYNAME,
                 COMPANYALIAS,
                 CEDIID,
-                EMPLOYEEID: oData.EMPLOYEEID,
-                EMAIL: oData.EMAIL,
-                PHONENUMBER: oData.PHONENUMBER,
-                EXTENSION: oData.EXTENSION,
-                DEPARTMENT: oData.DEPARTMENT,
+                DEPARTMENT,
                 FUNCTION: oData.FUNCTION,
-                //BALANCE: parseFloat(oData.BALANCE) || 0,
+                BALANCE: parseFloat(oData.BALANCE) || 0,
                 STREET: oData.STREET,
                 POSTALCODE: parseInt(oData.POSTALCODE, 10),
                 CITY: oData.CITY,
@@ -451,6 +487,7 @@ sap.ui.define([
                 var user = oData.value.find(u => u.USERID === UserId);
                 if (user) {
                     user.DETAIL_ROW.ACTIVED = false;
+                    user.DETAIL_ROW.DELETED = true;
                 }
                 oModel.setData(oData);
             })
@@ -485,7 +522,36 @@ sap.ui.define([
         },
 
         activateUser: function(UserId){
-            // Aqui agregar la lógica para activar al usuario
+            var that = this;
+            fetch(`http://localhost:4004/api/security/deleteAny?borrado=activar&userid=${encodeURIComponent(UserId)}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+            .then(async response => {
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error("Error al activar usuario: " + errorText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                MessageToast.show("Usuario activado correctamente");
+                // Se actualiza el modelo localmente sin volver a llamar a la API
+                var oTable = that.byId("IdTable1UsersManageTable");
+                var oModel = oTable.getModel();
+                var oData = oModel.getData();
+                var user = oData.value.find(u => u.USERID === UserId);
+                if (user) {
+                    user.DETAIL_ROW.ACTIVED = true;
+                    user.DETAIL_ROW.DELETED = false;
+                }
+                oModel.setData(oData);
+            })
+            .catch(error => {
+                MessageBox.error("No se pudo activar el usuario:\n" + error.message);
+            });
         },
 
 

@@ -96,14 +96,14 @@
       <!-- Combobox: Departamento (CEDIS) -->
       <ComboBox
           id="comboBoxCedis"
-          items="{/cedis}"
+          items="{deptosModel>/cedis}"
           selectionChange="onCediSelected"
           selectedKey="{newUserModel>/DEPARTMENT}"
           placeholder="Departamento">
         <core:Item
             id="CediItem"
-            key="{CEDIID}"
-            text="{CEDINAME}" />
+            key="{deptosModel>VALUEID}"
+            text="{deptosModel>VALUE}" />
       </ComboBox>
 
       <!-- Combobox: Roles -->
@@ -124,10 +124,15 @@
         <!-- Aquí se mostrarán los roles seleccionados -->
       </VBox>
 
-      <Input
+        <Input
           id="inputUserFunction"
           placeholder="Función que ejerce"
           value="{newUserModel>/FUNCTION}" />
+
+        <Input
+          id="inputUserBalance"
+          placeholder="Balance"
+          value="{newUserModel>/BALANCE}" />
 
       <!-- Grupo: Datos de dirección -->
       <Title text="Dirección" level="H4" class="sapUiSmallMarginTop" />
