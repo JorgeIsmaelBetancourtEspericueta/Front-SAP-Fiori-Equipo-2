@@ -168,113 +168,117 @@ sap.ui.define([
          * Función onpress del botón para agregar un nuevo usuario
          */
         onAddUser : function() {
-            var oView = this.getView();
+        var oView = this.getView();
 
-            if (!this._oCreateUserDialog) {
-                Fragment.load({
-                    id: oView.getId(),
-                    name: "com.invertions.sapfiorimodinv.view.security.fragments.AddUserDialog",
-                    controller: this
-                }).then(oDialog => {
-                    this._oCreateUserDialog = oDialog;
-                    oView.addDependent(oDialog);
-                    this.loadRoles();
-                    this.loadCompanies();
-                    this._oCreateUserDialog.open();
-                });
-            } else {
+        // Modelo para el nuevo usuario
+        var oNewUserModel = new sap.ui.model.json.JSONModel({
+            USERID: "",
+            PASSWORD: "",
+            ALIAS: "",
+            FIRSTNAME: "",
+            LASTNAME: "",
+            //BALANCE: 0,
+            BIRTHDAYDATE: null,
+            EMPLOYEEID: "",
+            EMAIL: "",
+            PHONENUMBER: "",
+            EXTENSION: "",
+            DEPARTMENT: "",
+            FUNCTION: "",
+            STREET: "",
+            POSTALCODE: "",
+            CITY: "",
+            REGION: "",
+            STATE: "",
+            COUNTRY: ""
+        });
+        oView.setModel(oNewUserModel, "newUserModel");
+
+        if (!this._oCreateUserDialog) {
+            Fragment.load({
+                id: oView.getId(),
+                name: "com.invertions.sapfiorimodinv.view.security.fragments.AddUserDialog",
+                controller: this
+            }).then(oDialog => {
+                this._oCreateUserDialog = oDialog;
+                oView.addDependent(oDialog);
+                this.loadRoles();
+                this.loadCompanies();
                 this._oCreateUserDialog.open();
-            }
-            
-        },
+            });
+        } else {
+            this._oCreateUserDialog.open();
+        }
+    },
 
         onSaveUser: function() {
             var oView = this.getView();
+            var oNewUserModel = oView.getModel("newUserModel");
+            var oData = oNewUserModel.getData();
 
-            // Obtén los valores de los inputs
-            var oDialog = oView.byId("AddUserDialog") || sap.ui.core.Fragment.byId(oView.getId(), "AddUserDialog");
-            var getInput = function(id) {
-                /** @type {sap.m.Input} */
-                var input = /** @type {sap.m.Input} */ (sap.ui.core.Fragment.byId(oView.getId(), id));
-                return input.getValue();
-            };
-
-            var USERID = getInput("inputUserId");
-            var USERNAME = getInput("inputUsername");
-            var ALIAS = getInput("inputAlias");
-            var FIRSTNAME = getInput("inputFirstName");
-            var LASTNAME = getInput("inputLastName");
-            var oDatePicker = /** @type {sap.m.DatePicker} */ (sap.ui.core.Fragment.byId(oView.getId(), "inputUserBirthdayDate"));
-            var BIRTHDAYDATE = oDatePicker.getDateValue();
+            // Obtener la compañía seleccionada
             /** @type {sap.m.ComboBox} */
             var oComboBox = /** @type {sap.m.ComboBox} */ (sap.ui.core.Fragment.byId(oView.getId(), "comboBoxCompanies"));
             var VID = oComboBox.getSelectedKey();
-            // Obtén el objeto de la compañía seleccionada
             var oCompaniesModel = oView.getModel("companiesModel");
             var aCompanies = oCompaniesModel.getProperty("/companies");
             var oSelectedCompany = aCompanies.find(function(company) {
                 return company.VALUEID == VID;
             });
-            // Extrae los valores directamente del objeto seleccionado
+
+            // Extraer los valores de la compañía seleccionada
             var COMPANYID = oSelectedCompany ? oSelectedCompany.COMPANYID : "";
             var COMPANYNAME = oSelectedCompany ? oSelectedCompany.VALUE : "";
             var COMPANYALIAS = oSelectedCompany ? oSelectedCompany.ALIAS : "";
             var CEDIID = oSelectedCompany ? String(oSelectedCompany.CEDIID) : "";
 
-            var EMPLOYEEID = getInput("inputEmployeeId");
-            var EMAIL = getInput("inputUserEmail");
-            var PHONENUMBER = getInput("inputUserPhoneNumber");
-            var EXTENSION = getInput("inputUserExtension");
-            var DEPARTMENT = getInput("inputUserDepartment");
-            var FUNCTION = getInput("inputUserFunction");
-            var STREET = getInput("inputUserStreet");
-            var POSTALCODE = parseInt(getInput("inputUserPostalCode"), 10);
-            var CITY = getInput("inputUserCity");
-            var REGION = getInput("inputUserRegion");
-            var STATE = getInput("inputUserState");
-            var COUNTRY = getInput("inputUserCountry");
-
             // Obtener roles seleccionados
+            /** @type {sap.m.VBox} */
             var oVBox = /** @type {sap.m.VBox} */ (sap.ui.core.Fragment.byId(oView.getId(), "selectedRolesVBox"));
             var ROLES = oVBox.getItems().map(function(oItem) {
                 return { ROLEID: oItem.data("roleId") };
             });
 
-            // Formatea la fecha si es necesario
+            var oDatePicker = /** @type {sap.m.DatePicker} */ (sap.ui.core.Fragment.byId(oView.getId(), "inputUserBirthdayDate"));
+            var oDate = oDatePicker.getDateValue(); // Esto sí es un objeto Date o null
+
             var sBirthday = "";
-            if (BIRTHDAYDATE) {
-                var day = String(BIRTHDAYDATE.getDate()).padStart(2, '0');
-                var month = String(BIRTHDAYDATE.getMonth() + 1).padStart(2, '0');
-                var year = BIRTHDAYDATE.getFullYear();
+            if (oDate) {
+                var day = String(oDate.getDate()).padStart(2, '0');
+                var month = String(oDate.getMonth() + 1).padStart(2, '0');
+                var year = oDate.getFullYear();
                 sBirthday = `${day}.${month}.${year}`;
             }
 
             // Construye el objeto usuario
             var oUser = {
-                USERID,
-                USERNAME,
-                ALIAS,
-                FIRSTNAME,
-                LASTNAME,
+                USERID: oData.USERID,
+                USERNAME: oData.FIRSTNAME + " " + oData.LASTNAME,
+                PASSWORD: oData.PASSWORD,
+                ALIAS: oData.ALIAS,
+                FIRSTNAME: oData.FIRSTNAME,
+                LASTNAME: oData.LASTNAME,
                 BIRTHDAYDATE: sBirthday,
                 COMPANYID,
                 COMPANYNAME,
                 COMPANYALIAS,
                 CEDIID,
-                EMPLOYEEID,
-                EMAIL,
-                PHONENUMBER,
-                EXTENSION,
-                DEPARTMENT,
-                FUNCTION,
-                STREET,
-                POSTALCODE,
-                CITY,
-                REGION,
-                STATE,
-                COUNTRY,
+                EMPLOYEEID: oData.EMPLOYEEID,
+                EMAIL: oData.EMAIL,
+                PHONENUMBER: oData.PHONENUMBER,
+                EXTENSION: oData.EXTENSION,
+                DEPARTMENT: oData.DEPARTMENT,
+                FUNCTION: oData.FUNCTION,
+                //BALANCE: parseFloat(oData.BALANCE) || 0,
+                STREET: oData.STREET,
+                POSTALCODE: parseInt(oData.POSTALCODE, 10),
+                CITY: oData.CITY,
+                REGION: oData.REGION,
+                STATE: oData.STATE,
+                COUNTRY: oData.COUNTRY,
                 ROLES
             };
+
             console.log(JSON.stringify(oUser));
 
             // Llama a la API para guardar el usuario
