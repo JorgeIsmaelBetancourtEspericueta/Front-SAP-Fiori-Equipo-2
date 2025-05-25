@@ -37,10 +37,10 @@
                     <Text
                         text="{
                         path: 'strategyResultModel>/startDate',
-                        formatter: '.formatDate'
+                        formatter: '._formatDate'
                     } - {
                         path: 'strategyResultModel>/endDate',
-                        formatter: '.formatDate'
+                        formatter: '._formatDate'
                     }"
                     />
                 </HBox>
@@ -67,7 +67,9 @@
                         class="sapUiTinyMarginEnd"
                     />
                     <Text
-                        text="{strategyResultModel>/compradas}"
+                        text="{
+                        parts: ['strategyResultModel>/signals', 'buy']
+                    }"
                         class="successText"
                     />
                 </HBox>
@@ -77,7 +79,9 @@
                         class="sapUiTinyMarginEnd"
                     />
                     <Text
-                        text="{strategyResultModel>/vendidas}"
+                        text="{
+                        parts: ['strategyResultModel>/signals', 'sell']
+                    }"
                         class="errorText"
                     />
                 </HBox>
@@ -88,8 +92,7 @@
                     />
                     <Text
                         text="{
-                        path: 'strategyResultModel>/signals',
-                        formatter: '.formatStopLossCount'
+                        path: 'strategyResultModel>/signals'
                     }"
                         class="warningText"
                     />
@@ -108,10 +111,9 @@
                         class="sapUiTinyMarginEnd"
                     />
                     <ObjectStatus
-                        text="{strategyResultModel>/typeLastOp}"
+                        text="{strategyResultModel>/signals/0/type}"
                         state="{
-                            path: 'strategyResultModel>/signals/0/type',
-                            formatter: '.formatSignalState'
+                            path: 'strategyResultModel>/signals/0/type'
                         }"
                     />
                 </HBox>
@@ -120,12 +122,11 @@
                         text="Precio:"
                         class="sapUiTinyMarginEnd"
                     />
-                    <ObjectStatus
-                        text="{strategyResultModel>/priceLastOp}"
-                        state="{
-                            path: 'strategyResultModel>/signals/0/type',
-                            formatter: '.formatSignalState'
-                        }"
+                    <Text
+                        text="{
+                        path: 'strategyResultModel>/signals/0/price'
+                    
+                    }"
                     />
                 </HBox>
                 <HBox justifyContent="SpaceBetween">
@@ -133,12 +134,9 @@
                         text="Razón:"
                         class="sapUiTinyMarginEnd"
                     />
-                    <ObjectStatus
-                        text="{strategyResultModel>/reasonigLastOp}"
-                        state="{
-                            path: 'strategyResultModel>/signals/0/type',
-                            formatter: '.formatSignalState'
-                        }"
+                    <Text
+                        text="{strategyResultModel>/signals/0/reasoning}"
+                        wrapping="true"
                     />
                 </HBox>
             </VBox>
