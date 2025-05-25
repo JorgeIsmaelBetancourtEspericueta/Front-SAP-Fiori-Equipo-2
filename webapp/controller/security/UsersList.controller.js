@@ -44,7 +44,7 @@ sap.ui.define([
             .then(res => res.json())
             .then(data => {
                 data.value.forEach(user => {
-                    user.ROLES = that.formatRoles(user.ROLES);
+                    user.FORMAT_ROLES = that.formatRoles(user.ROLES);
                 });
                 console.log(data);
                 oModel.setData(data);
@@ -115,9 +115,6 @@ sap.ui.define([
         loadRoles: function () {
             var oView = this.getView();
             var oRolesModel = new JSONModel();
-
-            // En nuestro proyecto nosotros creamos un archivo llamado en.json para cargar la url de las apis
-            // Cambiar esto segun su backend
             fetch("http://localhost:4004/api/security/crudRoles?action=get", {
                 method: "POST",
                 headers: {
@@ -143,6 +140,24 @@ sap.ui.define([
                 : "";
         },
 
+        editFormatRoles: function (rolesArray) {
+            if (!Array.isArray(rolesArray) || rolesArray.length === 0) {
+                return "";
+            }
+            // Modelo de roles
+            var oRolesModel = this.getView().getModel();
+            if (!oRolesModel) {
+                this.loadRoles();
+                oRolesModel = this.getView().getModel();
+            }
+            var aRoles = oRolesModel.getProperty("/roles");
+            // Mapea los ROLEID a ROLENAME
+            return rolesArray.map(function(roleObj) {
+                var found = aRoles.find(function(r) { return r.ROLEID === roleObj.ROLEID; });
+                return found ? found.ROLENAME : roleObj.ROLEID;
+            }).join("-");
+        },
+
         /**
          * Este evento se encarga de crear los items en el VBox con el nombre de los roles que se vayan agregando.
          */
@@ -153,8 +168,8 @@ sap.ui.define([
 
             var oVBox;
             // Este if valida si es la modal de add user o edit user en la que se estáran colocando los roles
-            if (oComboBox.getId().includes("comboBoxEditRoles")) {
-                oVBox = this.getView().byId("selectedEditRolesVBox");  // Update User VBox
+            if (oComboBox.getId().includes("editcomboBoxRoles")) {
+                oVBox = this.getView().byId("editselectedRolesVBox");  // Update User VBox
             } else {
                 oVBox = this.getView().byId("selectedRolesVBox");   // Create User VBox
             }
@@ -199,7 +214,7 @@ sap.ui.define([
             ALIAS: "",
             FIRSTNAME: "",
             LASTNAME: "",
-            BALANCE: 0,
+            BALANCE: "",
             BIRTHDAYDATE: null,
             EMPLOYEEID: "",
             EMAIL: "",
@@ -242,7 +257,7 @@ sap.ui.define([
             // Obtener la compañía seleccionada
             /** @type {sap.m.ComboBox} */
             var oComboBox = /** @type {sap.m.ComboBox} */ (sap.ui.core.Fragment.byId(oView.getId(), "comboBoxCompanies"));
-            var VID = oComboBox.getSelectedKey();
+            var VID = oComboBox.getProperty("selectedKey");
             var oCompaniesModel = oView.getModel("companiesModel");
             var aCompanies = oCompaniesModel.getProperty("/companies");
             var oSelectedCompany = aCompanies.find(function(company) {
@@ -250,14 +265,14 @@ sap.ui.define([
             });
 
             // Extraer los valores de la compañía seleccionada
-            var COMPANYID = oSelectedCompany ? oSelectedCompany.COMPANYID : "";
+            var COMPANYID = oSelectedCompany ? oSelectedCompany.VALUEID : "";
             var COMPANYNAME = oSelectedCompany ? oSelectedCompany.VALUE : "";
             var COMPANYALIAS = oSelectedCompany ? oSelectedCompany.ALIAS : "";
 
             // Obtener el departamento seleccionado
             /** @type {sap.m.ComboBox} */
             var oComboBoxDepto = /** @type {sap.m.ComboBox} */ (sap.ui.core.Fragment.byId(oView.getId(), "comboBoxCedis"));
-            var DEPTOID = oComboBoxDepto.getSelectedKey();
+            var DEPTOID = oComboBoxDepto.getProperty("selectedKey");
             var oDeptosModel = oView.getModel("deptosModel");
             var aDeptos = oDeptosModel.getProperty("/cedis");
             var oSelectedDepto = aDeptos.find(function(depto) {
@@ -265,7 +280,7 @@ sap.ui.define([
             });
             // Extraer los valores del departamento seleccionado
             var DEPARTMENT = oSelectedDepto ? oSelectedDepto.VALUE : "";
-            var CEDIID = oSelectedDepto ? String(oSelectedDepto.CEDIID) : "";
+            var CEDIID = oSelectedDepto ? oSelectedDepto.VALUEID : "";
 
             // Obtener roles seleccionados
             /** @type {sap.m.VBox} */
@@ -274,6 +289,7 @@ sap.ui.define([
                 return { ROLEID: oItem.data("roleId") };
             });
 
+            /** @type {sap.m.DatePicker} */
             var oDatePicker = /** @type {sap.m.DatePicker} */ (sap.ui.core.Fragment.byId(oView.getId(), "inputUserBirthdayDate"));
             var oDate = oDatePicker.getDateValue(); // Esto sí es un objeto Date o null
 
@@ -359,6 +375,20 @@ sap.ui.define([
         onEditUser: function() {
             var oView = this.getView();
 
+            if (!this.selectedUser) {
+                MessageToast.show("Selecciona un usuario para editar");
+                return;
+            }
+
+            var oEditUserModel = new sap.ui.model.json.JSONModel(Object.assign({}, this.selectedUser));
+            oView.setModel(oEditUserModel, "editUserModel");
+
+            // Cargar roles, compañías y departamentos
+            var that = this;
+            this.loadRoles();
+            this.loadCompanies();
+            this.loadDeptos(this.selectedUser.COMPANYID);
+
             if (!this._oEditUserDialog) {
                 Fragment.load({
                     id: oView.getId(),
@@ -368,19 +398,217 @@ sap.ui.define([
                     this._oEditUserDialog = oDialog;
                     oView.addDependent(oDialog);
                     this._oEditUserDialog.open();
+                    this._fillEditRolesVBox();
                 });
             } else {
                 this._oEditUserDialog.open();
+                // Selecciona la compañía si el ComboBox ya existe
+                var oCombo = /** @type {sap.m.ComboBox} */ (sap.ui.core.Fragment.byId(oView.getId(), "comboBoxCompanies"));
+                if (oCombo && this.selectedUser.COMPANYID) {
+                    oCombo.setSelectedKey(this.selectedUser.COMPANYID);
+                }
+
+                this._fillEditRolesVBox();
             }
-            
         },
 
-        onEditSaveUser: function(){
-            //Aquí la lógica para agregar la info actualizada del usuario en la bd
+        /**
+         * Llena el VBox de roles seleccionados en la edición
+         */
+        _fillEditRolesVBox: function() {
+            var oView = this.getView();
+            var oVBox = oView.byId("editselectedRolesVBox");
+            if (!oVBox) return;
+            oVBox.removeAllItems();
+            // Obtener los roles
+            var oRolesModel = oView.getModel();
+            var aRolesCatalog = oRolesModel ? oRolesModel.getProperty("/roles") : [];
+
+            var aRoles = (this.selectedUser && this.selectedUser.ROLES) ? this.selectedUser.ROLES : [];
+            aRoles.forEach(function(role) {
+                // Busca el nombre del rol usando el ROLEID
+                var found = aRolesCatalog.find(function(r) { return r.ROLEID === role.ROLEID; });
+                var roleName = found ? found.ROLENAME : role.ROLEID;
+
+                var oHBox = new sap.m.HBox({
+                    items: [
+                        new sap.m.Label({ text: roleName }).addStyleClass("sapUiSmallMarginEnd"),
+                        new sap.m.Button({
+                            icon: "sap-icon://decline",
+                            type: sap.m.ButtonType.Transparent,
+                            press: function() { oVBox.removeItem(oHBox); }
+                        })
+                    ]
+                });
+                oHBox.data("roleId", role.ROLEID);
+                oVBox.addItem(oHBox);
+            });
+        },
+
+        onEditSaveUser: function() {
+            var oView = this.getView();
+            var oEditUserModel = oView.getModel("editUserModel");
+            var oData = oEditUserModel.getData();
+
+            // Obtener la compañía seleccionada
+            var oComboBox = /** @type {sap.m.ComboBox} */ 
+            (sap.ui.core.Fragment.byId(oView.getId(), "editComboBoxCompanies"));
+            var VID = oComboBox.getSelectedKey();
+            var oCompaniesModel = oView.getModel("companiesModel");
+            var aCompanies = oCompaniesModel.getProperty("/companies");
+            var oSelectedCompany = aCompanies.find(function(company) {
+                return company.VALUEID == VID;
+            });
+
+            // Extraer los valores de la compañía seleccionada
+            var COMPANYID = oSelectedCompany ? oSelectedCompany.VALUEID : "";
+            var COMPANYNAME = oSelectedCompany ? oSelectedCompany.VALUE : "";
+            var COMPANYALIAS = oSelectedCompany ? oSelectedCompany.ALIAS : "";
+
+            // Obtener el departamento seleccionado
+            /** @type {sap.m.ComboBox} */
+            var oComboBoxDepto = /** @type {sap.m.ComboBox} */ 
+            (sap.ui.core.Fragment.byId(oView.getId(), "editcomboBoxCedis"));
+            var DEPTOID = oComboBoxDepto.getSelectedKey();
+            var oDeptosModel = oView.getModel("deptosModel");
+            var aDeptos = oDeptosModel.getProperty("/cedis");
+            var oSelectedDepto = aDeptos.find(function(depto) {
+                return depto.VALUEID == DEPTOID;
+            });
+            var DEPARTMENT = oSelectedDepto ? oSelectedDepto.VALUE : "";
+            var CEDIID = oSelectedDepto ? oSelectedDepto.VALUEID : "";
+
+            // Obtener roles seleccionados
+            var oVBox = oView.byId("editselectedRolesVBox");
+            var ROLES = oVBox.getItems().map(function(oItem) {
+                return { ROLEID: oItem.data("roleId") };
+            });
+
+            // Obtener y formatear la fecha de nacimiento
+            var sBirthday = "";
+            /** @type {sap.m.DatePicker} */
+            var oDatePicker = /** @type {sap.m.DatePicker} */ (sap.ui.core.Fragment.byId(oView.getId(), "editUserBirthdayDate"));
+            var oDate = oDatePicker.getDateValue();
+
+            // Si el usuario no interactuó con el DatePicker, intenta convertir el valor del modelo
+            if (!oDate && oData.BIRTHDAYDATE) {
+                sBirthday = oData.BIRTHDAYDATE;
+            }
+
+
+
+            if (oDate) {
+                var day = String(oDate.getDate()).padStart(2, '0');
+                var month = String(oDate.getMonth() + 1).padStart(2, '0');
+                var year = oDate.getFullYear();
+                sBirthday = `${day}.${month}.${year}`;
+            }
+
+            // Construye el objeto usuario actualizado
+            var oUser = {
+                USERID: oData.USERID,
+                USERNAME: oData.FIRSTNAME + " " + oData.LASTNAME,
+                PASSWORD: oData.PASSWORD,
+                ALIAS: oData.ALIAS,
+                FIRSTNAME: oData.FIRSTNAME,
+                LASTNAME: oData.LASTNAME,
+                EMPLOYEEID: oData.EMPLOYEEID,
+                EXTENSION: oData.EXTENSION,
+                PHONENUMBER: oData.PHONENUMBER,
+                EMAIL: oData.EMAIL,
+                BIRTHDAYDATE: sBirthday,
+                AVATAR: oData.AVATAR,
+                COMPANYID,
+                COMPANYNAME,
+                COMPANYALIAS,
+                CEDIID,
+                DEPARTMENT,
+                FUNCTION: oData.FUNCTION,
+                BALANCE: parseFloat(oData.BALANCE) || 0,
+                STREET: oData.STREET,
+                POSTALCODE: parseInt(oData.POSTALCODE, 10),
+                CITY: oData.CITY,
+                REGION: oData.REGION,
+                STATE: oData.STATE,
+                COUNTRY: oData.COUNTRY,
+                ROLES
+            };
+            console.log("Usuario a actualizar:", JSON.stringify(oUser));
+
+            // Llama a la API para actualizar el usuario
+            fetch(`http://localhost:4004/api/security/crudUsers?action=update&userid=${encodeURIComponent(this.selectedUser.USERID)}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ users: oUser })
+            })
+            .then(async response => {
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error("Error al actualizar usuario: " + errorText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                MessageToast.show("Usuario actualizado correctamente");
+                // Actualiza el modelo local de la tabla
+                var oTable = this.byId("IdTable1UsersManageTable");
+                var oModel = oTable.getModel();
+                var oTableData = oModel.getData();
+
+                this._originalUserId = this.selectedUser.USERID;
+                var idx = oTableData.value.findIndex(u => u.USERID === this._originalUserId);
+                if (idx !== -1) {
+                    oTableData.value[idx] = oUser;
+                    oTableData.value[idx].FORMAT_ROLES = this.editFormatRoles(oUser.ROLES);
+                    
+                    oModel.setData(oTableData);
+                }
+                this._originalUserId = null;
+                // Actualizar this.selectedUser para que apunte al objeto actualizado
+                this.selectedUser = oTableData.value[idx];
+                this._oEditUserDialog.close();
+            })
+            .catch(error => {
+                MessageBox.error("No se pudo actualizar el usuario:\n" + error.message);
+            });
         },
 
         onEditCancelUser: function(){
             if (this._oEditUserDialog) {
+                var oView = this.getView();
+                // Limpia el modelo editUserModel
+                var oEditUserModel = oView.getModel("editUserModel");
+                if (oEditUserModel) {
+                    oEditUserModel.setData({
+                        USERID: "",
+                        PASSWORD: "",
+                        USERNAME: "",
+                        ALIAS: "",
+                        FIRSTNAME: "",
+                        LASTNAME: "",
+                        BALANCE: "",
+                        BIRTHDAYDATE: null,
+                        EMPLOYEEID: "",
+                        EMAIL: "",
+                        PHONENUMBER: "",
+                        EXTENSION: "",
+                        AVATAR: "",
+                        DEPARTMENT: "",
+                        FUNCTION: "",
+                        STREET: "",
+                        POSTALCODE: "",
+                        CITY: "",
+                        REGION: "",
+                        STATE: "",
+                        COUNTRY: "",
+                        COMPANYID: "",
+                        CEDIID: "",
+                        ROLES: []
+                    });
+                }
+
                 this._oEditUserDialog.close();
             }
         },
