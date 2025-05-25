@@ -9,212 +9,426 @@ sap.ui.define(
     "sap/viz/ui5/data/FlattenedDataset",
     "sap/viz/ui5/controls/common/feeds/FeedItem",
   ],
-  function (Controller, JSONModel, MessageToast, DateFormat, MessageBox) {
+  function (
+    Controller,
+    JSONModel,
+    MessageToast,
+    DateFormat,
+    MessageBox,
+    VizFrame,
+    FlattenedDataset,
+    FeedItem
+  ) {
     "use strict";
 
     return Controller.extend(
       "com.invertions.sapfiorimodinv.controller.investments.Investments",
       {
-        // Variables de clase
         _oResourceBundle: null,
+        _bSidebarExpanded: true,
         _sSidebarOriginalSize: "380px",
 
-        // CONSTANTES
-        _CONSTANTS: {
-          DEFAULT_BALANCE: 1000,
-          DEFAULT_STOCK: 1,
-          DEFAULT_SHORT_SMA: 50,
-          DEFAULT_LONG_SMA: 200,
-          API_ENDPOINT: "http://localhost:4004/api/inv/crudSimulation", // Base URL, action will be added
-          SIMULATION_ACTION: "post", //Added action as constant
-        },
-
         onInit: function () {
-          this._initModels();
-          this._setDefaultDates();
-          this._loadI18nTexts();
-          this._setupViewDelegates();
-        },
+          // 1. Modelo para los símbolos (datos estáticos por ahora)
+          this._initSymbolModel();
 
-        // Inicialización de modelos
-        _initModels: function () {
-          this._createSymbolModel();
-          this._createPriceDataModel();
-          this._createViewModel();
-          this._createStrategyAnalysisModel();
-          this._createStrategyResultModel();
-        },
-
-        _createSymbolModel: function () {
+          // 2. Modelo para la tabla (vacío)
           this.getView().setModel(
             new JSONModel({
-              symbols: [
-                { symbol: "TSLA", name: "Tesla" },
-                { symbol: "AAPL", name: "Apple" },
-                { symbol: "IBM", name: "IBM" },
-              ],
+              value: [],
             }),
-            "symbolModel"
+            "priceData"
           );
-        },
 
-        _createPriceDataModel: function () {
-          this.getView().setModel(new JSONModel({ value: [] }), "priceData");
-        },
-
-        _createViewModel: function () {
-          this.getView().setModel(
-            new JSONModel({
-              selectedTab: "table",
-            }),
-            "viewModel"
-          );
-        },
-
-        _createStrategyAnalysisModel: function () {
-          this.getView().setModel(
-            new JSONModel({
-              balance: this._CONSTANTS.DEFAULT_BALANCE,
-              stock: this._CONSTANTS.DEFAULT_STOCK,
-              strategyKey: "",
-              longSMA: this._CONSTANTS.DEFAULT_LONG_SMA,
-              shortSMA: this._CONSTANTS.DEFAULT_SHORT_SMA,
-              startDate: null,
-              endDate: null,
-              controlsVisible: false,
-              strategies: [], // Will be populated in _loadI18nTexts
-              investmentAmount: 1000, // Agregado: Valor por defecto, se puede cambiar en la UI
-            }),
-            "strategyAnalysisModel"
-          );
-        },
-
-        _createStrategyResultModel: function () {
-          this.getView().setModel(
-            new JSONModel({
-              hasResults: false,
-              chart_data: [],
-              signals: [],
-              result: null,
-              simulationName: "", // Added for consistency
-              symbol: "",
-              startDate: null,
-              endDate: null,
-            }),
-            "strategyResultModel"
-          );
-        },
-
-        // Carga textos i18n
-        _loadI18nTexts: function () {
-          var oI18nModel = this.getOwnerComponent().getModel("i18n");
-          if (!oI18nModel) {
-            console.error("Modelo i18n no encontrado");
-            return;
-          }
-
-          try {
-            this._oResourceBundle = oI18nModel.getResourceBundle();
-            this.getView()
-              .getModel("strategyAnalysisModel")
-              .setProperty("/strategies", [
-                {
-                  key: "",
-                  text: this._oResourceBundle.getText(
-                    "selectStrategyPlaceholder"
-                  ),
-                },
-                {
-                  key: "Reversión Simple",
-                  text: this._oResourceBundle.getText(
-                    "movingAverageCrossoverStrategy"
-                  ),
-                },
-              ]);
-          } catch (error) {
-            console.error("Error al cargar ResourceBundle:", error);
-          }
-        },
-
-        // Configurar delegados de vista
-        _setupViewDelegates: function () {
+          // 3. Configurar gráfica
           this.getView().addEventDelegate({
             onAfterRendering: this._onViewAfterRendering.bind(this),
           });
+
+          var oViewModel = new sap.ui.model.json.JSONModel({
+            selectedTab: "table",
+          });
+          this.getView().setModel(oViewModel, "viewModel");
+
+          // Inicializar el modelo de análisis
+          var oStrategyAnalysisModelData = {
+            balance: 1000,
+            stock: 1,
+            strategyKey: "",
+            longSMA: 200,
+            shortSMA: 50,
+            startDate: null,
+            endDate: null,
+            controlsVisible: false,
+            strategies: [
+              { key: "", text: "Cargando textos..." },
+              { key: "MACrossover", text: "Cargando textos..." },
+            ],
+          };
+          var oStrategyAnalysisModel = new JSONModel(
+            oStrategyAnalysisModelData
+          );
+          this.getView().setModel(
+            oStrategyAnalysisModel,
+            "strategyAnalysisModel"
+          );
+
+          // Modelo historial de inversiones
+          this.getView().setModel(
+            new JSONModel({
+              strategies: [
+                {
+                  date: new Date(2024, 4, 15), // Mayo 15, 2024
+                  strategyName: "Moving Average Crossover 1",
+                  symbol: "AAPL",
+                  result: 2500.5,
+                  status: "Completado",
+                },
+                {
+                  date: new Date(2024, 4, 16), // Mayo 16, 2024
+                  strategyName: "Moving Average Crossover 2",
+                  symbol: "TSLA",
+                  result: -1200.3,
+                  status: "Completado",
+                },
+                {
+                  date: new Date(2024, 4, 17), // Mayo 17, 2024
+                  strategyName: "Moving Average Crossover 3",
+                  symbol: "MSFT",
+                  result: 3400.8,
+                  status: "En Proceso",
+                },
+              ],
+              filteredCount: 0,
+              selectedCount: 0,
+              filters: {
+                dateRange: null,
+                investmentRange: [0, 10000],
+                profitRange: [-100, 100],
+              },
+            }),
+            "historyModel"
+          );
+
+          //Inicialización modelo de resultados
+          var oStrategyResultModel = new JSONModel({
+            hasResults: false,
+            idSimulation: null,
+            signal: null,
+            date_from: null,
+            date_to: null,
+            moving_averages: { short: null, long: null },
+            signals: [],
+            chart_data: {},
+            result: null,
+          });
+          this.getView().setModel(oStrategyResultModel, "strategyResultModel");
+
+          this._setDefaultDates();
+
+          // Cargar el ResourceBundle
+          var oI18nModel = this.getOwnerComponent().getModel("i18n");
+          if (oI18nModel) {
+            try {
+              var oResourceBundle = oI18nModel.getResourceBundle();
+              if (
+                oResourceBundle &&
+                typeof oResourceBundle.getText === "function"
+              ) {
+                this._oResourceBundle = oResourceBundle;
+                oStrategyAnalysisModel.setProperty("/strategies", [
+                  {
+                    key: "",
+                    text: this._oResourceBundle.getText(
+                      "selectStrategyPlaceholder"
+                    ),
+                  },
+                  {
+                    key: "MACrossover",
+                    text: this._oResourceBundle.getText(
+                      "movingAverageCrossoverStrategy"
+                    ),
+                  },
+                  {
+                    key: "Reversión Simple",
+                    text: this._oResourceBundle.getText(
+                      "movingAverageReversionSimpleStrategy"
+                    ),
+                  },
+                ]);
+                console.log("Textos de i18n cargados correctamente.");
+              } else {
+                throw new Error("ResourceBundle no válido");
+              }
+            } catch (error) {
+              console.error("Error al cargar ResourceBundle:", error);
+              oStrategyAnalysisModel.setProperty("/strategies", [
+                { key: "", text: "Error i18n: Seleccione..." },
+                { key: "MACrossover", text: "Error i18n: Cruce Medias..." },
+              ]);
+            }
+          } else {
+            console.error(
+              "Modelo i18n no encontrado. Usando textos por defecto."
+            );
+            oStrategyAnalysisModel.setProperty("/strategies", [
+              { key: "", text: "No i18n: Seleccione..." },
+              { key: "MACrossover", text: "No i18n: Cruce Medias..." },
+            ]);
+          }
+
+          // Para el tamaño del Sidebar
+          var oSidebarLayoutData = this.byId("sidebarLayoutData");
+          if (oSidebarLayoutData) {
+            this._sSidebarOriginalSize = oSidebarLayoutData.getSize();
+          } else {
+            var oSidebarVBox = this.byId("sidebarVBox");
+            if (oSidebarVBox && oSidebarVBox.getLayoutData()) {
+              this._sSidebarOriginalSize = oSidebarVBox
+                .getLayoutData()
+                .getSize();
+            }
+          }
+        },
+        onTabSelect: function (oEvent) {
+          var sKey = oEvent.getParameter("key");
+          this.getView()
+            .getModel("viewModel")
+            .setProperty("/selectedTab", sKey);
         },
 
-        // Configurar gráfico
         _onViewAfterRendering: function () {
+          this._configureChart();
+        },
+
+        _initSymbolModel: function () {
+          const oSymbolModel = new JSONModel({
+            symbols: [
+              { symbol: "TSLA", name: "Tesla" },
+              { symbol: "AAPL", name: "Apple" },
+              { symbol: "MSFT", name: "Microsoft" },
+              { symbol: "IBM", name: "IBM" },
+            ],
+          });
+          this.getView().setModel(oSymbolModel, "symbolModel");
+        },
+
+        /* onSymbolChange: function(oEvent) {
+        const sSymbol = oEvent.getSource().getSelectedKey();
+        this._loadPriceData(sSymbol).then(aData => {
+            const oPriceModel = this.getView().getModel("priceData");
+            oPriceModel.setProperty("/originalValue", aData); // Guarda los datos originales
+            oPriceModel.setProperty("/value", aData); // Muestra los datos en la gráfica
+        }).catch(error => {
+            console.error("Error al cargar los datos del símbolo:", error.message);
+        });
+    }, */
+        _transformDataForVizFrame: function (aApiData) {
+          if (!aApiData || !Array.isArray(aApiData)) {
+            return [];
+          }
+          return aApiData.map((oItem) => {
+            let dateValue = oItem.DATE || oItem.date;
+
+            let closeValue = parseFloat(oItem.CLOSE || oItem.close);
+            if (isNaN(closeValue)) closeValue = null;
+
+            return {
+              DATE: dateValue,
+              OPEN: parseFloat(oItem.OPEN) || null,
+              HIGH: parseFloat(oItem.HIGH) || null,
+              LOW: parseFloat(oItem.LOW) || null,
+              CLOSE: closeValue,
+              VOLUME: parseFloat(oItem.VOLUME) || null,
+            };
+          });
+        },
+
+        _configureChart: function () {
           const oVizFrame = this.byId("idVizFrame");
-          if (!oVizFrame) return;
+          if (!oVizFrame) {
+            console.warn(
+              "Función _configureChart: VizFrame con ID 'idVizFrame' no encontrado en este punto del ciclo de vida."
+            );
+            return;
+          }
 
           oVizFrame.setVizProperties({
             plotArea: {
-              dataShape: {
-                primaryAxis: ["line", "line", "line", "point", "point"],
-              },
-              colorPalette: [
-                "#0074D9",
-                "#FFDC00",
-                "#FFA500",
-                "#2ecc40",
-                "#ff4136",
-              ],
               dataLabel: { visible: false },
-              marker: {
-                visible: true,
-                shape: [
-                  "circle",
-                  "circle",
-                  "circle",
-                  "triangleUp",
-                  "triangleDown",
-                ],
-              },
               window: {
-                start: "firstDataPoint",
-                end: "lastDataPoint",
+                start: null,
+                end: null,
               },
             },
             valueAxis: {
               title: { text: "Precio de Cierre (USD)" },
-              visible: true,
             },
             timeAxis: {
               title: { text: "Fecha" },
               levels: ["day", "month", "year"],
-              label: { formatString: "dd/MM/yy" },
+              label: {
+                formatString: "dd/MM/yy",
+              },
             },
-            title: { text: "Histórico de Precios de Acciones" },
-            legend: { visible: true },
+            title: {
+              text: "Histórico de Precios de Acciones",
+            },
+            legend: {
+              visible: true,
+            },
             toolTip: {
               visible: true,
-              formatString: [
-                ["PrecioCierre", ":.2f USD"],
-                ["PrecioInicial", ":.2f"],
-                ["High", ":.2f"],
-                ["Open", ":.2f USD"],
-                ["SMA", ":.2f USD"],
-              ],
+              formatString: "#,##0.00",
             },
             interaction: {
-              zoom: { enablement: "enabled" },
-              selectability: { mode: "single" },
+              zoom: {
+                enablement: "enabled",
+              },
+              selectability: {
+                mode: "single",
+              },
             },
           });
+          console.log(
+            "Propiedades de VizFrame configuradas para permitir zoom."
+          );
         },
 
-        // Métodos de fecha
+        // PANEL DE ESTRATEGIAS
         _setDefaultDates: function () {
-          var oModel = this.getView().getModel("strategyAnalysisModel");
+          var oStrategyAnalysisModel = this.getView().getModel(
+            "strategyAnalysisModel"
+          );
           var oToday = new Date();
+          oStrategyAnalysisModel.setProperty("/endDate", new Date(oToday));
           var oStartDate = new Date(oToday);
           oStartDate.setMonth(oStartDate.getMonth() - 6);
-
-          oModel.setProperty("/endDate", new Date(oToday));
-          oModel.setProperty("/startDate", new Date(oStartDate));
+          oStrategyAnalysisModel.setProperty(
+            "/startDate",
+            new Date(oStartDate)
+          );
         },
 
+        onStrategyChange: function (oEvent) {
+          var oStrategyAnalysisModel = this.getView().getModel(
+            "strategyAnalysisModel"
+          );
+          var sSelectedKey = oEvent.getParameter("selectedItem").getKey();
+          oStrategyAnalysisModel.setProperty(
+            "/controlsVisible",
+            !!sSelectedKey
+          );
+        },
+
+        onRunAnalysisPress: function () {
+          var oView = this.getView();
+          var oStrategyModel = oView.getModel("strategyAnalysisModel");
+          var oResultModel = oView.getModel("strategyResultModel");
+          var oAnalysisPanel =
+            this.byId("strategyAnalysisPanelTable")?.byId(
+              "strategyAnalysisPanel"
+            ) ||
+            this.byId("strategyAnalysisPanelChart")?.byId(
+              "strategyAnalysisPanel"
+            );
+          var oResultPanel =
+            this.byId("strategyResultPanel") ||
+            sap.ui.getCore().byId("strategyResultPanel");
+          var sSymbol = oView.byId("symbolSelector").getSelectedKey();
+
+          // Validaciones básicas
+          if (!oStrategyModel.getProperty("/strategyKey")) {
+            MessageBox.warning("Seleccione una estrategia");
+            return;
+          }
+          if (!sSymbol) {
+            MessageBox.warning("Seleccione un símbolo (ej: AAPL)");
+            return;
+          }
+
+          if (oAnalysisPanel) {
+            oAnalysisPanel.setExpanded(false);
+          }
+          // Expande el panel de resultados
+          if (oResultPanel) {
+            oResultPanel.setExpanded(true);
+          }
+
+          const SPECS = [
+            {
+              INDICATOR: "SHORT_MA",
+              VALUE: oStrategyModel.getProperty("/shortSMA"), // Asegúrate de que el tipo de dato sea correcto (número si lo esperas como número)
+            },
+            {
+              INDICATOR: "LONG_MA",
+              VALUE: oStrategyModel.getProperty("/longSMA"), // Asegúrate de que el tipo de dato sea correcto
+            },
+          ];
+
+          // Configurar petición
+          var oRequestBody = {
+            SIMULATION: {
+              SYMBOL: sSymbol,
+              STARTDATE: this._formatDate(
+                oStrategyModel.getProperty("/startDate")
+              ),
+              ENDDATE: this._formatDate(oStrategyModel.getProperty("/endDate")),
+              AMOUNT: 1000,
+              USERID: "ARAMIS",
+              SPECS: SPECS,
+            },
+          };
+
+          // Llamada a la API
+          const PORT = 4004;
+          fetch(
+            `http://localhost:${PORT}/api/inv/simulation?strategy=macrossover`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(oRequestBody),
+            }
+          )
+            .then((response) =>
+              response.ok ? response.json() : Promise.reject(response)
+            )
+            .then((data) => {
+              console.log("Datos recibidos:", data);
+
+              // Guardar datos en el modelo
+              oResultModel.setData({
+                hasResults: true,
+                chart_data: this._prepareTableData(
+                  data.value?.[0]?.CHART_DATA || []
+                ),
+                signals: data.value?.[0]?.SIGNALS || [],
+                result: data.value?.[0]?.result || 0,
+              });
+
+              // Sumar la ganancia al balance
+              var oStrategyModel = this.getView().getModel(
+                "strategyAnalysisModel"
+              );
+              var currentBalance = oStrategyModel.getProperty("/balance") || 0;
+              var gainPerShare = data.value.result || 0;
+              var stock = oStrategyModel.getProperty("/stock") || 1;
+              var totalGain = +(gainPerShare * stock).toFixed(2);
+              oStrategyModel.setProperty(
+                "/balance",
+                currentBalance + totalGain
+              );
+              MessageToast.show(
+                "Se añadieron $" + totalGain + " a tu balance."
+              );
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+              MessageBox.error("Error al obtener datos de simulación");
+            });
+        },
+
+        // Función auxiliar para formatear fechas
         _formatDate: function (oDate) {
           return oDate
             ? DateFormat.getDateInstance({ pattern: "yyyy-MM-dd" }).format(
@@ -223,254 +437,179 @@ sap.ui.define(
             : null;
         },
 
-        // Event Handlers
-        onTabSelect: function (oEvent) {
-          var sKey = oEvent.getParameter("key");
-          this.getView()
-            .getModel("viewModel")
-            .setProperty("/selectedTab", sKey);
-        },
-
-        onStrategyChange: function (oEvent) {
-          var sSelectedKey = oEvent.getParameter("selectedItem").getKey();
-          this.getView()
-            .getModel("strategyAnalysisModel")
-            .setProperty("/controlsVisible", !!sSelectedKey);
-        },
-
-        onRunAnalysisPress: function () {
-          var oView = this.getView();
-          var oStrategyModel = oView.getModel("strategyAnalysisModel");
-          var oResultModel = oView.getModel("strategyResultModel");
-          var sSymbol = oView.byId("symbolSelector").getSelectedKey();
-
-          // Validaciones
-          if (!this._validateAnalysisInputs(oStrategyModel, sSymbol)) return;
-
-          // Configurar y llamar API
-          this._callAnalysisAPI(sSymbol, oStrategyModel, oResultModel);
-        },
-
-        _validateAnalysisInputs: function (oStrategyModel, sSymbol) {
-          if (!oStrategyModel.getProperty("/strategyKey")) {
-            MessageBox.warning("Seleccione una estrategia");
-            return false;
-          }
-          if (!sSymbol) {
-            MessageBox.warning("Seleccione un símbolo (ej: AAPL)");
-            return false;
-          }
-          return true;
-        },
-
-        _callAnalysisAPI: function (sSymbol, oStrategyModel, oResultModel) {
-          const sStartDate = this._formatDate(
-            oStrategyModel.getProperty("/startDate")
-          );
-          const sEndDate = this._formatDate(
-            oStrategyModel.getProperty("/endDate")
-          );
-          const sSpecs = `SHORT:${oStrategyModel.getProperty(
-            "/shortSMA"
-          )}&LONG:${oStrategyModel.getProperty("/longSMA")}`;
-          // Get investmentAmount from the model
-          const initialInvestment =
-            oStrategyModel.getProperty("/investmentAmount");
-
-          const rsiPeriod = oStrategyModel.getProperty("/simpleRSI");
-
-          if (!rsiPeriod) {
-            MessageBox.warning("Ingrese en la RSI Simple");
-            return false;
-          }
-
-          const sUrl = `${this._CONSTANTS.API_ENDPOINT}?action=${this._CONSTANTS.SIMULATION_ACTION}&symbol=${sSymbol}&initial_investment=${initialInvestment}&simulationName=ReversionSimple&startDate=${sStartDate}&endDate=${sEndDate}&rsiPeriod=${rsiPeriod}`;
-
-          fetch(sUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-          })
-            .then((response) =>
-              response.ok ? response.json() : Promise.reject(response)
-            )
-            .then((data) =>
-              this._handleAnalysisResponse(data, oStrategyModel, oResultModel)
-            )
-            .catch((error) => {
-              console.error("Error:", error);
-              MessageBox.error("Error al obtener datos de simulación");
-            });
-        },
-
-        _handleAnalysisResponse: function (data, oStrategyModel, oResultModel) {
-          console.log("Datos recibidos:", data);
-          const simulationData = data.value?.[0]?.simulation;
-          if (!simulationData) {
-            MessageBox.error("No se recibieron datos de simulación válidos.");
-            return;
-          }
-          console.log("Datos para la gráfica:", simulationData?.chart_data);
-          console.log("Señales:", simulationData?.signals);
-          var oView = this.getView();
-
-          // Actualizar modelo de resultados
-          oResultModel.setData({
-            hasResults: true,
-            chart_data: this._prepareTableData(
-              simulationData?.chart_data || [],
-              simulationData?.signals || [],
-              simulationData?.historicalPrices || [] // Use signals for transactions
-            ),
-            signals: simulationData?.signals || [],
-            result: simulationData?.result || 0, // Use result from simulation data
-            simulationName:
-              simulationData?.simulationName || "Moving Average Crossover", // keep simulation name
-            symbol: simulationData?.symbol, // Get symbol from response
-            startDate:
-              simulationData?.startDate ||
-              oStrategyModel.getProperty("/startDate"),
-            endDate:
-              simulationData?.endDate || oStrategyModel.getProperty("/endDate"),
-            compradas: simulationData?.summary?.totalBoughtUnits,
-            vendidas: simulationData?.summary?.totalSoldUnits,
-            typeLastOp: simulationData?.lastOperation?.type,
-            priceLastOp: simulationData?.lastOperation?.price,
-            reasonigLastOp: simulationData?.lastOperation?.reasoning,
-          });
-
-          // Actualizar balance
-          var currentBalance = oStrategyModel.getProperty("/balance") || 0;
-          var realProfit = simulationData?.summary?.realProfit || 0; // Get the realProfit
-          var stock = oStrategyModel.getProperty("/stock") || 1;
-
-          oStrategyModel.setProperty("/balance", currentBalance + realProfit);
-          MessageToast.show(
-            `Se añadieron $${realProfit.toFixed(2)} a tu balance.`
-          );
-        },
-
-        _prepareTableData: function (aData, aSignals, aHistoricalPrices) {
+        // Función auxiliar para preparar datos para la tabla
+        _prepareTableData: function (aData) {
           if (!Array.isArray(aData)) return [];
 
-          const oDateFormat = DateFormat.getDateInstance({
-            pattern: "dd/MM/yyyy",
-          });
-          let currentShares = 0; // Track shares in real-time.
-
-          return aData.map((oItem) => {
-            const oDate = oItem.Date ? new Date(oItem.Date) : null;
-            const sDateKey = oDate ? oDate.toISOString() : "";
-
-            let smaValue = null;
-            let rsiValue = null;
-
-            // Find the corresponding historical price item for this date to get Indicators
-            const oHistoricalPriceItem = aHistoricalPrices.find((hpItem) => {
-              const hpDate = hpItem.Date ? new Date(hpItem.Date) : null;
-              return hpDate && hpDate.toISOString() === sDateKey;
-            });
-
-            // Parse the "Indicators" string from the historical price item to extract SMA and RSI values
-            if (oHistoricalPriceItem && oHistoricalPriceItem.Indicators) {
-              const indicatorParts =
-                oHistoricalPriceItem.Indicators.split(", ");
-              indicatorParts.forEach((part) => {
-                if (part.startsWith("SMA:")) {
-                  smaValue = parseFloat(part.replace("SMA: ", ""));
-                } else if (part.startsWith("RSI:")) {
-                  rsiValue = parseFloat(part.replace("RSI: ", ""));
-                }
-              });
-            }
-
-            // Find the signal for this date
-            const oSignal = aSignals.find((signal) => {
-              const signalDate = signal.date ? new Date(signal.date) : null;
-              return signalDate && signalDate.toISOString() === sDateKey;
-            });
-
-            // Find the transaction for this date (using aHistoricalPrices as aTransactions, as per user's _handleAnalysisResponse)
-
-            // Update shareholdings based on transactions
-
-            return {
-              DATE: oDate ? oDateFormat.format(oDate) : "",
-              DATE_GRAPH: oDate,
-              OPEN: oItem.Open,
-              HIGH: oItem.High,
-              LOW: oItem.Low,
-              CLOSE: oItem.Close,
-              VOLUME: oItem.Volume,
-              INDICATORS: oHistoricalPriceItem?.Indicators || "-", // Now correctly pulling from historicalPrices
-
-              SIGNALS: oSignal?.signal?.toUpperCase() || "-",
-              RULES: oSignal?.reasoning || "-",
-              SHARES: currentShares.toFixed(4), // Price for sell signal point on chart
-            };
-          });
+          return aData.map((oItem) => ({
+            DATE: oItem.DATE,
+            OPEN: oItem.OPEN,
+            HIGH: oItem.high,
+            LOW: oItem.low,
+            CLOSE: oItem.close,
+            VOLUME: oItem.volume,
+            SHORT_MA: oItem.short_ma,
+            LONG_MA: oItem.long_ma,
+          }));
         },
 
         onRefreshChart: function () {
-          var oSymbolModel = this.getView().getModel("symbolModel");
-          var sCurrentSymbol =
-            oSymbolModel.getProperty("/selectedSymbol") ||
-            oSymbolModel.getProperty("/symbols")[0]?.symbol;
+          const oSymbolModel = this.getView().getModel("symbolModel");
+          const sCurrentSymbol = oSymbolModel.getProperty("/selectedSymbol");
 
           if (sCurrentSymbol) {
+            // Refresca los datos de la tabla y el gráfico
             this._loadPriceData(sCurrentSymbol);
           } else {
-            MessageToast.show("Por favor, seleccione un símbolo.");
+            const aSymbols = oSymbolModel.getProperty("/symbols");
+            if (aSymbols && aSymbols.length > 0) {
+              const sDefaultSymbol = aSymbols[0].symbol;
+              oSymbolModel.setProperty("/selectedSymbol", sDefaultSymbol);
+              this._loadPriceData(sDefaultSymbol);
+            } else {
+              MessageToast.show("Por favor, seleccione un símbolo.");
+            }
           }
         },
 
-        formatDate: function (oDate) {
-          if (!oDate) return "";
-          return DateFormat.getDateInstance({
-            pattern: "dd/MM/yyyy",
-          }).format(new Date(oDate));
-        },
-
-        formatSignalCount: function (aSignals, sType) {
-          if (!Array.isArray(aSignals)) return "0";
-          return aSignals.filter((s) => s.signal === sType).length.toString(); // use s.signal
-        },
-
-        formatStopLossCount: function (aSignals) {
-          if (!Array.isArray(aSignals)) return "0";
-          return aSignals
-            .filter((s) => s.reasoning?.includes("Stop Loss"))
-            .length.toString(); // Check for "Stop Loss"
-        },
-
-        formatSignalState: function (sType) {
-          return sType === "BUY" ? "Success" : "Error"; //check against "BUY"
-        },
-
-        formatCurrency: function (value) {
-          if (!value) return "$0.00";
-          return `$${parseFloat(value).toFixed(2)}`;
-        },
-
-        formatSignalPrice: function (value) {
-          if (!value) return "";
-          return `$${parseFloat(value).toFixed(2)}`;
-        },
         onDataPointSelect: function (oEvent) {
           const oData = oEvent.getParameter("data");
-          if (!oData || oData.length === 0) return;
+          console.log("Datos seleccionados:", oData);
 
-          const oSelectedData = oData[0].data;
-          if (
-            oSelectedData &&
-            oSelectedData.DATE &&
-            oSelectedData.CLOSE !== undefined
-          ) {
-            this.getView().getModel("viewModel").setProperty("/selectedPoint", {
-              DATE: oSelectedData.DATE,
-              CLOSE: oSelectedData.CLOSE,
-            });
+          if (oData && oData.length > 0) {
+            const oSelectedData = oData[0];
+            console.log("Datos del punto seleccionado:", oSelectedData);
+
+            const sFecha = oSelectedData.data.DATE;
+            const fPrecioCierre = oSelectedData.data.CLOSE;
+
+            if (sFecha && fPrecioCierre !== undefined) {
+              const oViewModel = this.getView().getModel("viewModel");
+              oViewModel.setProperty("/selectedPoint", {
+                DATE: sFecha,
+                CLOSE: fPrecioCierre,
+              });
+            } else {
+              console.warn(
+                "Los datos seleccionados no contienen DATE o CLOSE."
+              );
+            }
+          } else {
+            console.warn("No se seleccionaron datos.");
           }
         },
+
+        //Historial de inversiones
+        onHistoryPress: function (oEvent) {
+          if (!this._oHistoryPopover) {
+            this._oHistoryPopover = sap.ui.xmlfragment(
+              "com.invertions.sapfiorimodinv.view.investments.fragments.InvestmentHistoryPanel",
+              this
+            );
+            this.getView().addDependent(this._oHistoryPopover);
+          }
+
+          if (this._oHistoryPopover.isOpen()) {
+            this._oHistoryPopover.close();
+            return;
+          }
+
+          // Abrir la ventana
+          this._oHistoryPopover.openBy(oEvent.getSource());
+        },
+
+        // ******** FILTRO ********** //
+        onToggleAdvancedFilters: function () {
+          if (!this._oHistoryPopover) return;
+
+          // Get panel directly from popover content
+          const oPanel = sap.ui.getCore().byId("advancedFiltersPanel");
+
+          if (oPanel) {
+            oPanel.setVisible(!oPanel.getVisible());
+          } else {
+            console.warn("Advanced filters panel not found");
+          }
+        },
+
+        // Método del Sidebar
+        // onToggleSidebarPress: function() {
+        //     var oSidebarLayoutData = this.byId("sidebarLayoutData");
+
+        //     if (oSidebarLayoutData) {
+        //         if (this._bSidebarExpanded) {
+        //             this._sSidebarOriginalSize = oSidebarLayoutData.getSize();
+        //             oSidebarLayoutData.setSize("0px");
+        //         } else {
+        //             oSidebarLayoutData.setSize(this._sSidebarOriginalSize);
+        //         }
+        //         this._bSidebarExpanded = !this._bSidebarExpanded;
+
+        //         var oButton = this.byId("toggleSidebarButton");
+        //         if (oButton) {
+        //             oButton.setIcon(this._bSidebarExpanded ? "sap-icon://menu2" : "sap-icon://open-command-field");
+        //         }
+        //     } else {
+        //         console.error("No se pudo encontrar sidebarLayoutData para plegar/desplegar.");
+        //     }
+        // },
+
+        // onTimeIntervalChange: function(oEvent) {
+        //     const sKey = oEvent.getParameter("selectedItem").getKey();
+        //     const oPriceModel = this.getView().getModel("priceData");
+        //     const aOriginalData = oPriceModel.getProperty("/originalValue"); // Datos originales
+        //     const aData = aOriginalData || []; // Usa los datos originales si están disponibles
+
+        //     if (!aData || aData.length === 0) {
+        //         MessageToast.show("No hay datos originales disponibles para filtrar.");
+        //         return;
+        //     }
+
+        //     // Calcula la fecha de inicio según el intervalo seleccionado
+        //     const oEndDate = new Date();
+        //     let oStartDate;
+        //     switch (sKey) {
+        //         case "1D": // Último día
+        //             oStartDate = new Date(oEndDate);
+        //             oStartDate.setDate(oEndDate.getDate() - 1);
+        //             break;
+        //         case "1W": // Última semana
+        //             oStartDate = new Date(oEndDate);
+        //             oStartDate.setDate(oEndDate.getDate() - 7);
+        //             break;
+        //         case "1M": // Último mes
+        //             oStartDate = new Date(oEndDate);
+        //             oStartDate.setMonth(oEndDate.getMonth() - 1);
+        //             break;
+        //         case "1Y": // Último año
+        //             oStartDate = new Date(oEndDate);
+        //             oStartDate.setFullYear(oEndDate.getFullYear() - 1);
+        //             break;
+        //         case "ALL": // Historial completo
+        //         default:
+        //             oStartDate = null; // No filtrar
+        //             break;
+        //     }
+
+        //     // Filtra los datos según el intervalo
+        //     const oDateFormat = DateFormat.getDateInstance({ pattern: "MM/dd/yyyy" });
+        //     const aFilteredData = oStartDate
+        //         ? aData.filter(oItem => {
+        //             const oItemDate = new Date(oItem.DATE); // Usa new Date() para convertir la fecha
+        //             return oItemDate >= oStartDate && oItemDate <= oEndDate;
+        //         })
+        //         : aData;
+
+        //     if (aFilteredData.length === 0) {
+        //         MessageToast.show("No hay datos disponibles para el intervalo seleccionado.");
+        //         oPriceModel.setProperty("/value", aOriginalData); // Restaura los datos originales
+        //         return;
+        //     }
+
+        //     // Actualiza el modelo con los datos filtrados
+        //     console.log("Datos filtrados:", aFilteredData);
+        //     oPriceModel.setProperty("/value", aFilteredData);
+        // }
       }
     );
   }
