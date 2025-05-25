@@ -94,7 +94,7 @@
             <tl:Column id="IdColumnRoles" sortProperty="ROLES" width="12rem" autoResizable="true" resizable="true">
                 <m:Label id="IdLabelRoles" text="ROLES" />
                 <tl:template>
-                    <m:Text id="IdTextRoles" text="{ROLES}" wrapping="false"/>
+                    <m:Text id="IdTextRoles" text="{FORMAT_ROLES}" wrapping="false"/>
                 </tl:template>
             </tl:Column>
 
