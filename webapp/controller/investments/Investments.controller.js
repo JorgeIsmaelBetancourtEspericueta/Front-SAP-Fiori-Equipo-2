@@ -350,21 +350,46 @@ sap.ui.define(
           if (oAnalysisPanel) {
             oAnalysisPanel.setExpanded(false);
           }
+
+          var strategy = this.getView()
+            .getModel("strategyAnalysisModel")
+            .getProperty("/strategyKey");
           // Expande el panel de resultados
           if (oResultPanel) {
             oResultPanel.setExpanded(true);
           }
 
-          const SPECS = [
-            {
-              INDICATOR: "SHORT_MA",
-              VALUE: oStrategyModel.getProperty("/shortSMA"), // Asegúrate de que el tipo de dato sea correcto (número si lo esperas como número)
-            },
-            {
-              INDICATOR: "LONG_MA",
-              VALUE: oStrategyModel.getProperty("/longSMA"), // Asegúrate de que el tipo de dato sea correcto
-            },
-          ];
+          if (strategy === "Reversión Simple") {
+            strategy = "reversionsimple";
+          }
+
+          var SPECS = "";
+
+          if (strategy === "reversionsimple") {
+            const rsi = this.getView()
+              .getModel("strategyAnalysisModel")
+              .getProperty("/rsi");
+
+            SPECS = [
+              {
+                INDICATOR: "rsi",
+                VALUE: rsi,
+              },
+            ];
+
+            console.log(SPECS); // Opcional: para verificar que se armó correctamente
+          } else {
+            SPECS = [
+              {
+                INDICATOR: "SHORT_MA",
+                VALUE: oStrategyModel.getProperty("/shortSMA"), // Asegúrate de que el tipo de dato sea correcto (número si lo esperas como número)
+              },
+              {
+                INDICATOR: "LONG_MA",
+                VALUE: oStrategyModel.getProperty("/longSMA"), // Asegúrate de que el tipo de dato sea correcto
+              },
+            ];
+          }
 
           // Configurar petición
           var oRequestBody = {
@@ -374,7 +399,9 @@ sap.ui.define(
                 oStrategyModel.getProperty("/startDate")
               ),
               ENDDATE: this._formatDate(oStrategyModel.getProperty("/endDate")),
-              AMOUNT: 1000,
+              AMOUNT: this.getView()
+                .getModel("strategyAnalysisModel")
+                .getProperty("/stock"),
               USERID: "ARAMIS",
               SPECS: SPECS,
             },
@@ -382,8 +409,9 @@ sap.ui.define(
 
           // Llamada a la API
           const PORT = 4004;
+
           fetch(
-            `http://localhost:${PORT}/api/inv/simulation?strategy=macrossover`,
+            `http://localhost:${PORT}/api/inv/simulation?strategy=${strategy}`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -400,7 +428,8 @@ sap.ui.define(
               oResultModel.setData({
                 hasResults: true,
                 chart_data: this._prepareTableData(
-                  data.value?.[0]?.CHART_DATA || []
+                  data.value?.[0]?.CHART_DATA || [],
+                  data.value?.[0]?.SIGNALS || []
                 ),
                 signals: data.value?.[0]?.SIGNALS || [],
                 result: data.value?.[0]?.result || 0,
@@ -438,19 +467,29 @@ sap.ui.define(
         },
 
         // Función auxiliar para preparar datos para la tabla
-        _prepareTableData: function (aData) {
+        _prepareTableData: function (aData, aSignals) {
           if (!Array.isArray(aData)) return [];
 
-          return aData.map((oItem) => ({
-            DATE: oItem.DATE,
-            OPEN: oItem.OPEN,
-            HIGH: oItem.high,
-            LOW: oItem.low,
-            CLOSE: oItem.close,
-            VOLUME: oItem.volume,
-            SHORT_MA: oItem.short_ma,
-            LONG_MA: oItem.long_ma,
-          }));
+          return aData.map((oItem, index) => {
+            const signal = aSignals[index] || {};
+            return {
+              DATE: oItem.DATE,
+              OPEN: oItem.OPEN,
+              HIGH: oItem.HIGH,
+              LOW: oItem.LOW,
+              CLOSE: oItem.CLOSE,
+              VOLUME: oItem.VOLUME,
+              INDICATORS:
+                oItem.INDICATORS?.[0]?.VALUE != null
+                  ? "SMA: " + oItem.INDICATORS[0].VALUE
+                  : "N/A",
+              SIGNALS: signal.TYPE ? "ACCIÓN " + signal.TYPE : "SIN ACCIÓN",
+              RULES: signal.REASONING
+                ? "RAZÓN " + signal.REASONING
+                : "SIN RAZÓN",
+              SHARES: signal.SHARES ? signal.SHARES : 0,
+            };
+          });
         },
 
         onRefreshChart: function () {
