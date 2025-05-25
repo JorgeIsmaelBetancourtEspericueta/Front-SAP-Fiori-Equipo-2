@@ -81,6 +81,20 @@ sap.ui.define([
             var oComboBox = oEvent.getSource();
             var sSelectedKey = oComboBox.getSelectedKey();
 
+            // Limpiar el ComboBox de departamentos
+            var oView = this.getView();
+            /** @type {sap.m.ComboBox} */
+            var oComboBoxDepto = /** @type {sap.m.ComboBox} */ (sap.ui.core.Fragment.byId(oView.getId(), "editcomboBoxCedis"));
+            if (oComboBoxDepto && typeof oComboBoxDepto.setSelectedKey === "function") {
+                oComboBoxDepto.setSelectedKey(""); // Limpia la selección
+            }
+
+            /** @type {sap.m.ComboBox} */
+            var oComboBoxDepto = /** @type {sap.m.ComboBox} */ (sap.ui.core.Fragment.byId(oView.getId(), "comboBoxCedis"));
+            if (oComboBoxDepto && typeof oComboBoxDepto.setSelectedKey === "function") {
+                oComboBoxDepto.setSelectedKey(""); // Limpia la selección
+            }
+
             this.loadDeptos(sSelectedKey);
         },
 
@@ -259,10 +273,14 @@ sap.ui.define([
             var oComboBox = /** @type {sap.m.ComboBox} */ (sap.ui.core.Fragment.byId(oView.getId(), "comboBoxCompanies"));
             var VID = oComboBox.getProperty("selectedKey");
             var oCompaniesModel = oView.getModel("companiesModel");
-            var aCompanies = oCompaniesModel.getProperty("/companies");
-            var oSelectedCompany = aCompanies.find(function(company) {
-                return company.VALUEID == VID;
+            if (oCompaniesModel) {
+                var aCompanies = oCompaniesModel.getProperty("/companies");
+                var oSelectedCompany = aCompanies.find(function(company) {
+                    return company.VALUEID == VID;
             });
+            }
+
+            
 
             // Extraer los valores de la compañía seleccionada
             var COMPANYID = oSelectedCompany ? oSelectedCompany.VALUEID : "";
@@ -274,10 +292,13 @@ sap.ui.define([
             var oComboBoxDepto = /** @type {sap.m.ComboBox} */ (sap.ui.core.Fragment.byId(oView.getId(), "comboBoxCedis"));
             var DEPTOID = oComboBoxDepto.getProperty("selectedKey");
             var oDeptosModel = oView.getModel("deptosModel");
-            var aDeptos = oDeptosModel.getProperty("/cedis");
-            var oSelectedDepto = aDeptos.find(function(depto) {
-                return depto.VALUEID == DEPTOID;
+            if (oDeptosModel) {
+                var aDeptos = oDeptosModel.getProperty("/cedis");
+                var oSelectedDepto = aDeptos.find(function(depto) {
+                    return depto.VALUEID == DEPTOID;
             });
+            }
+            
             // Extraer los valores del departamento seleccionado
             var DEPARTMENT = oSelectedDepto ? oSelectedDepto.VALUE : "";
             var CEDIID = oSelectedDepto ? oSelectedDepto.VALUEID : "";
@@ -333,6 +354,14 @@ sap.ui.define([
 
             console.log(JSON.stringify(oUser));
 
+            var oTable = this.byId("IdTable1UsersManageTable");
+            var aAllUsers = oTable.getModel().getData().value;
+            var error = this._validateUser(oUser, aAllUsers, false);
+            if (error) {
+                MessageBox.error(error);
+                return;
+            }
+
             // Llama a la API para guardar el usuario
             fetch("http://localhost:4004/api/security/crudUsers?action=create", {
                 method: "POST",
@@ -351,7 +380,19 @@ sap.ui.define([
             .then(data => {
                 MessageToast.show("Usuario guardado correctamente");
                 this._oCreateUserDialog.close();
-                this.loadUsers();
+                // Actualizar el modelo local de la tabla
+                var oTable = this.byId("IdTable1UsersManageTable");
+                var oModel = oTable.getModel();
+                var oTableData = oModel.getData();
+
+                var newUser = data.value && data.value[0] && data.value[0].user;
+                console.log("Nuevo usuario:", newUser);
+                // Formatea los roles
+                newUser.FORMAT_ROLES = this.editFormatRoles(newUser.ROLES);
+
+                // Agrega el nuevo usuario
+                oTableData.value.push(newUser);
+                oModel.setData(oTableData);
             })
             .catch(error => {
                 MessageBox.error("No se pudo guardar el usuario:\n" + error.message);
@@ -534,6 +575,13 @@ sap.ui.define([
                 ROLES
             };
             console.log("Usuario a actualizar:", JSON.stringify(oUser));
+            var oTable = this.byId("IdTable1UsersManageTable");
+            var aAllUsers = oTable.getModel().getData().value;
+            var error = this._validateUser(oUser, aAllUsers, true);
+            if (error) {
+                MessageBox.error(error);
+                return;
+            }
 
             // Llama a la API para actualizar el usuario
             fetch(`http://localhost:4004/api/security/crudUsers?action=update&userid=${encodeURIComponent(this.selectedUser.USERID)}`, {
@@ -613,6 +661,58 @@ sap.ui.define([
             }
         },
 
+        // ===================================================
+        // ================= Validaciones ====================
+        // ===================================================
+        _validateUser: function(oUser, aAllUsers, isEdit = false) {
+            var errors = [];
+
+            const fieldNames = {
+                USERID: "Usuario",
+                PASSWORD: "Contraseña",
+                FIRSTNAME: "Nombre",
+                LASTNAME: "Apellido",
+                EMAIL: "Correo electrónico",
+                COMPANYID: "Compañía",
+                DEPARTMENT: "Departamento"
+            };
+
+            // Campos obligatorios
+            const requiredFields = [
+                "USERID", "PASSWORD", "FIRSTNAME","LASTNAME", "EMAIL", "COMPANYID", "DEPARTMENT", "ROLES" 
+            ];
+            for (let field of requiredFields) {
+                if (!oUser[field] || String(oUser[field]).trim() === "") {
+                    errors.push(`El campo "${fieldNames[field] || field}" es obligatorio.`);
+                }
+            }
+
+            // USERID único
+            if (!isEdit || (isEdit && oUser.USERID !== this._originalUserId)) {
+                if (aAllUsers.some(u => u.USERID === oUser.USERID)) {
+                    errors.push("El USERID ya existe. Debe ser único.");
+                }
+            }
+
+            // Email válido
+            if (!this.isValidEmail(oUser.EMAIL)) {
+                errors.push("El correo electrónico no es válido.");
+            }
+
+            // Balance numérico
+            if (isNaN(oUser.BALANCE)) {
+                errors.push("El balance debe ser un número.");
+            }
+
+            // Al menos un rol
+            if (!Array.isArray(oUser.ROLES) || oUser.ROLES.length === 0) {
+                errors.push("Debes asignar al menos un rol.");
+            }
+
+            // Puedes agregar más validaciones aquí...
+
+            return errors.length > 0 ? errors.join("\n") : null;
+        },
 
         // ===================================================
         // ========= Eliminar Usuario Fisicamente ============
