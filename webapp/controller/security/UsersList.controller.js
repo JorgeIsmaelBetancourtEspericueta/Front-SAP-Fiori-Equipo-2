@@ -81,6 +81,20 @@ sap.ui.define([
             var oComboBox = oEvent.getSource();
             var sSelectedKey = oComboBox.getSelectedKey();
 
+            // Limpiar el ComboBox de departamentos
+            var oView = this.getView();
+            /** @type {sap.m.ComboBox} */
+            var oComboBoxDepto = /** @type {sap.m.ComboBox} */ (sap.ui.core.Fragment.byId(oView.getId(), "editcomboBoxCedis"));
+            if (oComboBoxDepto && typeof oComboBoxDepto.setSelectedKey === "function") {
+                oComboBoxDepto.setSelectedKey(""); // Limpia la selección
+            }
+
+            /** @type {sap.m.ComboBox} */
+            var oComboBoxDepto = /** @type {sap.m.ComboBox} */ (sap.ui.core.Fragment.byId(oView.getId(), "comboBoxCedis"));
+            if (oComboBoxDepto && typeof oComboBoxDepto.setSelectedKey === "function") {
+                oComboBoxDepto.setSelectedKey(""); // Limpia la selección
+            }
+
             this.loadDeptos(sSelectedKey);
         },
 
@@ -351,7 +365,19 @@ sap.ui.define([
             .then(data => {
                 MessageToast.show("Usuario guardado correctamente");
                 this._oCreateUserDialog.close();
-                this.loadUsers();
+                // Actualizar el modelo local de la tabla
+                var oTable = this.byId("IdTable1UsersManageTable");
+                var oModel = oTable.getModel();
+                var oTableData = oModel.getData();
+
+                var newUser = data.value && data.value[0] && data.value[0].user;
+                console.log("Nuevo usuario:", newUser);
+                // Formatea los roles
+                newUser.FORMAT_ROLES = this.editFormatRoles(newUser.ROLES);
+
+                // Agrega el nuevo usuario
+                oTableData.value.push(newUser);
+                oModel.setData(oTableData);
             })
             .catch(error => {
                 MessageBox.error("No se pudo guardar el usuario:\n" + error.message);
