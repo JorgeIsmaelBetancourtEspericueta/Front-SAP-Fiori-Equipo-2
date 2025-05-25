@@ -461,8 +461,8 @@ sap.ui.define(
         _formatDate: function (oDate) {
           return oDate
             ? DateFormat.getDateInstance({ pattern: "yyyy-MM-dd" }).format(
-                oDate
-              )
+              oDate
+            )
             : null;
         },
 
@@ -472,25 +472,27 @@ sap.ui.define(
 
           return aData.map((oItem, index) => {
             const signal = aSignals[index] || {};
+            const oDate = new Date(oItem.DATE); // ← formato JS Date
+            const sFormattedDate = DateFormat.getDateInstance({ pattern: "yyyy-MM-dd" }).format(oDate);
+
             return {
-              DATE: oItem.DATE,
+              DATE_GRAPH: oDate, // ← usado en el gráfico
+              DATE: sFormattedDate, // ← usado en la tabla
               OPEN: oItem.OPEN,
               HIGH: oItem.HIGH,
               LOW: oItem.LOW,
               CLOSE: oItem.CLOSE,
-              VOLUME: oItem.VOLUME,
-              INDICATORS:
-                oItem.INDICATORS?.[0]?.VALUE != null
-                  ? "SMA: " + oItem.INDICATORS[0].VALUE
-                  : "N/A",
+              SHORT_MA: oItem.INDICATORS?.[0]?.SHORT_MA ?? null,
+              LONG_MA: oItem.INDICATORS?.[0]?.LONG_MA ?? null,
+              BUY_SIGNAL: signal.TYPE === "BUY" ? oItem.CLOSE : null,
+              SELL_SIGNAL: signal.TYPE === "SELL" ? oItem.CLOSE : null,
               SIGNALS: signal.TYPE ? "ACCIÓN " + signal.TYPE : "SIN ACCIÓN",
-              RULES: signal.REASONING
-                ? "RAZÓN " + signal.REASONING
-                : "SIN RAZÓN",
-              SHARES: signal.SHARES ? signal.SHARES : 0,
+              RULES: signal.REASONING ? "RAZÓN " + signal.REASONING : "SIN RAZÓN",
+              SHARES: signal.SHARES ?? 0,
             };
           });
-        },
+        }
+        ,
 
         onRefreshChart: function () {
           const oSymbolModel = this.getView().getModel("symbolModel");
