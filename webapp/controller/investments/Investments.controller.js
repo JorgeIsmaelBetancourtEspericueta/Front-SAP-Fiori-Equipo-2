@@ -399,7 +399,9 @@ sap.ui.define(
                 oStrategyModel.getProperty("/startDate")
               ),
               ENDDATE: this._formatDate(oStrategyModel.getProperty("/endDate")),
-              AMOUNT: 1000,
+              AMOUNT: this.getView()
+                .getModel("strategyAnalysisModel")
+                .getProperty("/stock"),
               USERID: "ARAMIS",
               SPECS: SPECS,
             },
