@@ -93,6 +93,11 @@
             "routes": [
                 {
                     "pattern": "",
+                    "name": "Login",
+                    "target": "TargetLogin"
+                },
+                {
+                    "pattern": "home",
                     "name": "RouteMain",
                     "target": "TargetMain"
                 },
@@ -189,7 +194,7 @@
                     "viewName": "Login",
                     "viewId": "login",
                     "viewType": "XML",
-                    "viewPath": "com.invertions.sapfiorimodinv.view.security"
+                    "viewPath": "com.invertions.sapfiorimodinv.view"
                 }
             }
         },
