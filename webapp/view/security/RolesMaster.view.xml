@@ -7,23 +7,23 @@
   xmlns:rowmodes="sap.ui.table.rowmodes"
   >
 
-  <m:Page id="rolesMaster" title="Roles" class="sapUiContentPadding">
 
 
     <m:Toolbar design="Transparent" class="customRoleToolbar">
       <m:Button text="Crear" icon="sap-icon://add" type="Accept" press=".onOpenDialog" />
+      <m:Button text="Editar" type="Emphasized" icon="sap-icon://edit" press=".onUpdateRole" />
+      <m:Button text="Desactivar" icon="sap-icon://delete" press=".onDesactivateRole" type="Attention" />
+      <m:Button text="Eliminar" icon="sap-icon://delete" type="Reject" press=".onDeleteRole" />
+            <m:ToolbarSpacer />
+
+      <m:ToolbarSpacer />
+      <m:ToolbarSpacer />
+      <m:ToolbarSpacer />
 
       <m:SearchField id="searchRoleName" width="25rem" placeholder="Buscar roles..." liveChange=".onMultiSearch" />
 
       <m:ToolbarSpacer />
       <m:ToolbarSpacer />
-      <m:Select id="roleStatusFilter" width="12rem" change=".onStatusFilterChange" forceSelection="true">
-        <m:items>
-          <core:Item key="all" text="Todos" />
-          <core:Item key="active" text="Activos" />
-          <core:Item key="inactive" text="Inactivos" />
-        </m:items>
-      </m:Select>
 
     </m:Toolbar>
 
@@ -74,7 +74,4 @@
         </m:OverflowToolbar>
       </tl:footer>
     </tl:Table>
-
-
-  </m:Page>
 </mvc:View>

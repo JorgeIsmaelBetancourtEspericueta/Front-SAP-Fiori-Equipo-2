@@ -90,8 +90,8 @@
                 "controlAggregation": "pages",
                 "transition": "slide"
             },
-            "routes": [
-                {
+              "routes": [
+                 {
                     "pattern": "",
                     "name": "Login",
                     "target": "TargetLogin"
@@ -106,15 +106,10 @@
                     "name": "RouteSalesForecast",
                     "target": "TargetSalesForecast"
                 },
-                {
+                 {
                     "pattern": "roles",
-                    "name": "RouteRolesMaster",
-                    "target": "TargetRolesMaster"
-                },
-                {
-                    "pattern": "roles/{roleId}",
-                    "name": "RouteRolesDetail",
-                    "target": "TargetRolesDetail"
+                    "name": "RouteRoles",
+                    "target": "TargetRoles"
                 },
                  {
                     "pattern": "users",
@@ -135,12 +130,7 @@
                     "pattern": "investments",
                     "name": "RouteInvestments",
                     "target": "TargetInvestments"
-                  },
-                {
-                    "pattern": "login",
-                    "name": "RouteLogin",
-                    "target": "TargetLogin" 
-                }
+                  }
             ],
             "targets": {
                 "TargetMain": {
@@ -154,17 +144,11 @@
                     "viewType": "XML",
                     "viewPath": "com.invertions.sapfiorimodinv.view.salesforecast"
                 },
-                "TargetRolesMaster": {
-                    "viewName": "RolesMaster",
-                    "viewId": "rolesMaster",
+                 "TargetRoles": {
+                    "viewName": "Roles",
+                    "viewId": "rolesSplitter",
                     "viewType": "XML",
-                    "viewPath": "com.invertions.sapfiorimodinv.view.security"
-                },
-                "TargetRolesDetail": {
-                    "viewName": "RolesDetail",
-                    "viewId": "rolesDetail",
-                    "viewType": "XML",
-                    "viewPath": "com.invertions.sapfiorimodinv.view.security"
+                    "viewPath": "com.invertions.sapfiorimodinv.view.security.splitter"
                 },
                 "TargetUsersList": {
                     "viewId": "UsersList",
