@@ -29,7 +29,6 @@
 
         <content>
             <VBox class="sapUiResponsivePadding">
-                <!-- Navigation Bar -->
                 <OverflowToolbar>
                     <IconTabHeader
                         selectedKey="{viewModel>/selectedTab}"
@@ -56,7 +55,6 @@
                     />
                 </OverflowToolbar>
 
-                <!-- Table View -->
                 <VBox
                     visible="{= ${viewModel>/selectedTab} === 'table'}"
                     class="sapUiSmallMarginTop sapUiSmallMarginBegin"
@@ -67,7 +65,6 @@
                         justifyContent="Start"
                         width="100%"
                     >
-                        <!-- Data Table -->
                         <VBox
                             fitContainer="true"
                             width="100%"
@@ -126,7 +123,7 @@
                                     <items>
                                         <ColumnListItem
                                             type="Active"
-                                            highlight="{= ${strategyResultModel>SIGNALS} === 'BUY' ? 'Success' : (${strategyResultModel>SIGNALS} === 'SELL' ? 'Error' : 'None') }"
+                                            highlight="{= ${strategyResultModel>SIGNALS} === 'ACCIÓN BUY' ? 'Success' : (${strategyResultModel>SIGNALS} === 'ACCIÓN SELL' ? 'Error' : 'None') }"
                                         >
                                             <cells>
                                                 <Text
@@ -148,7 +145,7 @@
                                                     text="{strategyResultModel>VOLUME}"
                                                 />
                                                 <Text
-                                                    text="{strategyResultModel>INDICATORS}"
+                                                    text="{strategyResultModel>INDICATORS_TEXT}"
                                                 />
                                                 <Text
                                                     text="{strategyResultModel>SIGNALS}"
@@ -165,7 +162,6 @@
                                 </Table>
                             </ScrollContainer>
                         </VBox>
-                        <!-- Strategy Analysis Panel -->
                         <VBox
                             width="300px"
                             class="sapUiSmallMarginBottom"
@@ -179,7 +175,6 @@
                     </FlexBox>
                 </VBox>
 
-                <!-- Chart View -->
                 <VBox
                     visible="{= ${viewModel>/selectedTab} === 'chart'}"
                     class="sapUiSmallMarginTop sapUiSmallMarginBegin"
@@ -191,7 +186,6 @@
                         height="auto"
                         width="100%"
                     >
-                        <!-- Chart Panel -->
                         <VBox
                             fitContainer="true"
                             height="100%"
@@ -233,37 +227,38 @@
                                                 <viz.data:dimensions>
                                                     <viz.data:DimensionDefinition
                                                         name="Fecha"
-                                                        value="{strategyResultModel>DATE_GRAPH}"
+                                                        value="{DATE_GRAPH}"
                                                         dataType="date"
                                                     />
                                                 </viz.data:dimensions>
                                                 <viz.data:measures>
                                                     <viz.data:MeasureDefinition
                                                         name="PrecioCierre"
-                                                        value="{strategyResultModel>CLOSE}"
+                                                        value="{CLOSE}"
                                                     />
                                                     <viz.data:MeasureDefinition
                                                         name="ShortMA"
-                                                        value="{strategyResultModel>SHORT_MA}"
-                                                        visible="{= ${strategyAnalysisModel>/strategyKey} === 'MACrossover' }"
+                                                        value="{SHORT_MA}"
                                                     />
                                                     <viz.data:MeasureDefinition
                                                         name="LongMA"
-                                                        value="{strategyResultModel>LONG_MA}"
-                                                        visible="{= ${strategyAnalysisModel>/strategyKey} === 'MACrossover' }"
+                                                        value="{LONG_MA}"
                                                     />
                                                     <viz.data:MeasureDefinition
                                                         name="RSI"
-                                                        value="{strategyResultModel>RSI}"
-                                                        visible="{= ${strategyAnalysisModel>/strategyKey} === 'Reversión Simple' }"
+                                                        value="{RSI}"
                                                     />
                                                     <viz.data:MeasureDefinition
                                                         name="Señal BUY"
-                                                        value="{strategyResultModel>BUY_SIGNAL}"
+                                                        value="{BUY_SIGNAL}"
                                                     />
                                                     <viz.data:MeasureDefinition
                                                         name="Señal SELL"
-                                                        value="{strategyResultModel>SELL_SIGNAL}"
+                                                        value="{SELL_SIGNAL}"
+                                                    />
+                                                    <viz.data:MeasureDefinition
+                                                        name="SMA"
+                                                        value="{SMA}"
                                                     />
                                                 </viz.data:measures>
                                             </viz.data:FlattenedDataset>
@@ -277,14 +272,13 @@
                                             <viz.feeds:FeedItem
                                                 uid="valueAxis"
                                                 type="Measure"
-                                                values="PrecioCierre,Señal BUY,Señal SELL,RSI"
+                                                values="{strategyAnalysisModel>/chartMeasuresFeed}"
                                             />
                                         </viz:feeds>
                                     </viz:VizFrame>
                                 </content>
                             </Panel>
                         </VBox>
-                        <!-- Strategy Analysis Panel -->
                         <VBox
                             width="300px"
                             class="sapUiSmallMarginBottom"
@@ -296,7 +290,6 @@
                             />
                         </VBox>
                     </FlexBox>
-                    <!-- Strategy Results -->
                     <VBox width="auto">
                         <core:Fragment
                             fragmentName="com.invertions.sapfiorimodinv.view.investments.fragments.StrategyResultPanel"
