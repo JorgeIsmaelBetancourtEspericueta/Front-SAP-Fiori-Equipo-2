@@ -72,6 +72,7 @@ sap.ui.define(
               { key: "Reversión Simple", text: "Cargando textos..." },
             ],
             // IMPORTANT: Initialize as an ARRAY of strings for VizFrame FeedItem
+            // Ahora usamos los NOMBRES de las medidas definidos en el XML
             chartMeasuresFeed: ["PrecioCierre", "Señal BUY", "Señal SELL"],
           };
           var oStrategyAnalysisModel = new JSONModel(
@@ -334,13 +335,14 @@ sap.ui.define(
           );
           // Update strategyKey in the model
           oStrategyAnalysisModel.setProperty("/strategyKey", sSelectedKey);
-          // Call function to update chart measures feed based on new strategy
           this._updateChartMeasuresFeed();
+          // Call function to update chart measures feed based on new strategy
         },
 
         /**
          * Event handler for running the analysis.
          * Makes an API call to get simulation data and updates models.
+         * It also triggers the update of chart measures feed after data is loaded.
          */
         onRunAnalysisPress: function () {
           var oView = this.getView();
@@ -448,6 +450,16 @@ sap.ui.define(
                 result: data.value?.[0]?.result || 0,
               });
 
+              // After new data is loaded, ensure chart feeds are updated based on current strategy
+              // Esto es crucial para que el gráfico se actualice correctamente con las medidas de la nueva estrategia
+
+              // Invalidate the VizFrame to force a re-render
+              const oVizFrame = this.byId("idVizFrame");
+              if (oVizFrame) {
+                oVizFrame.invalidate(); // Invalidate the control to force re-rendering
+                // oVizFrame.rerender(); // Explicitly rerender (though invalidate often triggers this) - NO ES NECESARIO
+              }
+
               // Update balance
               var currentBalance = oStrategyModel.getProperty("/balance") || 0;
               var gainPerShare = data.value.result || 0; // Assuming result is per share
@@ -511,37 +523,39 @@ sap.ui.define(
             let shortMA = null;
             let longMA = null;
             let rsi = null;
-            let sma = null;
+            let sma = null; // Variable para la SMA simple
 
             if (Array.isArray(oItem.INDICATORS)) {
               oItem.INDICATORS.forEach((indicator) => {
+                // Asegúrate de que estos nombres coincidan EXACTAMENTE con lo que tu API devuelve
+                // Por ejemplo, si tu API devuelve "SHORT_MA" (mayúsculas), cambia aquí a "SHORT_MA"
                 if (indicator.INDICATOR === "short_ma") {
                   shortMA = parseFloat(indicator.VALUE);
                 } else if (indicator.INDICATOR === "long_ma") {
                   longMA = parseFloat(indicator.VALUE);
                 } else if (indicator.INDICATOR === "rsi") {
-                  // Assuming API returns 'rsi' for Simple Reversion
                   rsi = parseFloat(indicator.VALUE);
                 } else if (indicator.INDICATOR === "sma") {
-                  // Assuming API returns 'rsi' for Simple Reversion
+                  // Nuevo indicador para Reversión Simple
                   sma = parseFloat(indicator.VALUE);
                 }
               });
             }
-            // --- INICIO DE LA CORRECCIÓN PARA INDICATORS_TEXT ---
-            let indicatorParts = [];
-            if (shortMA !== null) {
-              indicatorParts.push(`SMA Corta: ${shortMA}`);
-            }
-            if (longMA !== null) {
-              indicatorParts.push(`SMA Larga: ${longMA}`);
-            }
-            if (rsi !== null) {
-              indicatorParts.push(`RSI: ${rsi}`);
-            }
 
-            if (sma !== null) {
-              indicatorParts.push(`SMA: ${sma}`);
+            // Construcción dinámica de la cadena de texto de indicadores para la tabla
+            let indicatorParts = [];
+            if (shortMA !== null && !isNaN(shortMA)) {
+              indicatorParts.push(`SMA Corta: ${shortMA.toFixed(2)}`); // Formatear a 2 decimales
+            }
+            if (longMA !== null && !isNaN(longMA)) {
+              indicatorParts.push(`SMA Larga: ${longMA.toFixed(2)}`); // Formatear a 2 decimales
+            }
+            if (rsi !== null && !isNaN(rsi)) {
+              indicatorParts.push(`RSI: ${rsi.toFixed(2)}`); // Formatear a 2 decimales
+            }
+            if (sma !== null && !isNaN(sma)) {
+              // Incluir SMA simple si tiene valor
+              indicatorParts.push(`SMA: ${sma.toFixed(2)}`); // Formatear a 2 decimales
             }
 
             const indicatorsText =
@@ -563,12 +577,12 @@ sap.ui.define(
               SHORT_MA: shortMA,
               LONG_MA: longMA,
               RSI: rsi,
-              SMA: sma,
+              SMA: sma, // Asegúrate de incluir SMA aquí para que el gráfico pueda acceder a él
               // Signal points on chart (only show value if a signal exists)
               BUY_SIGNAL:
-                signal.TYPE === "BUY" ? parseFloat(oItem.CLOSE) : null,
+                signal.TYPE === "buy" ? parseFloat(oItem.CLOSE) : null,
               SELL_SIGNAL:
-                signal.TYPE === "SELL" ? parseFloat(oItem.CLOSE) : null,
+                signal.TYPE === "sell" ? parseFloat(oItem.CLOSE) : null,
               // Properties for table (e.g., combined indicator text)
               INDICATORS_TEXT: indicatorsText, // Usamos la cadena construida dinámicamente
 
@@ -593,32 +607,60 @@ sap.ui.define(
           const sStrategyKey =
             oStrategyAnalysisModel.getProperty("/strategyKey");
 
-          let aMeasures = ["PrecioCierre", "Señal BUY", "Señal SELL"]; // Base measures always visible
+          // Define las medidas base que siempre deben estar presentes
+          // ¡IMPORTANTE! Usar los NOMBRES de las MeasureDefinition del XML, no los nombres de las propiedades de los datos.
+          let aMeasures = ["PrecioCierre", "Señal BUY", "Señal SELL"];
 
+          // Añade medidas adicionales según la estrategia seleccionada
           if (sStrategyKey === "MACrossover") {
-            aMeasures.push("ShortMA", "LongMA");
+            aMeasures.push("SHORT_MA", "LONG_MA"); // Estos nombres coinciden en tu XML
           } else if (sStrategyKey === "Reversión Simple") {
-            aMeasures.push("RSI", "SMA");
+            aMeasures.push("RSI", "SMA"); // Estos nombres coinciden en tu XML
           }
-          // Add more conditions for other strategies if needed
 
-          // IMPORTANT: Set the property in the model as an ARRAY, not a comma-separated string
+          // Actualiza la propiedad del modelo con las medidas actuales
           oStrategyAnalysisModel.setProperty("/chartMeasuresFeed", aMeasures);
+          console.log("Medidas actualizadas en el modelo:", aMeasures);
 
-          // Optional: Force VizFrame feed update if it's already rendered
-          // This ensures the chart reacts immediately without full re-render,
-          // though binding should handle it in most cases.
           const oVizFrame = this.byId("idVizFrame");
           if (oVizFrame) {
-            const oValueAxisFeed = oVizFrame
-              .getFeeds()
-              .find((feed) => feed.getUid() === "valueAxis");
-            if (oValueAxisFeed) {
-              // IMPORTANT: setValues also expects an array
-              oValueAxisFeed.setValues(aMeasures);
+            // Obtener el dataset actual
+            const oDataset = oVizFrame.getDataset();
+            if (oDataset) {
+              // Eliminar feeds existentes para valueAxis
+              const aCurrentFeeds = oVizFrame.getFeeds();
+              for (let i = aCurrentFeeds.length - 1; i >= 0; i--) {
+                const oFeed = aCurrentFeeds[i];
+                if (oFeed.getUid() === "valueAxis") {
+                  oVizFrame.removeFeed(oFeed);
+                }
+              }
+
+              // Crear y añadir un nuevo FeedItem para valueAxis con las medidas actualizadas
+              const oNewValueAxisFeed = new FeedItem({
+                uid: "valueAxis",
+                type: "Measure",
+                values: aMeasures,
+              });
+              oVizFrame.addFeed(oNewValueAxisFeed);
+              console.log(
+                "Nuevo Feed 'valueAxis' añadido con:",
+                oNewValueAxisFeed.getValues()
+              );
+
+              // Forzar la actualización del dataset si es necesario (a veces ayuda)
+              oDataset.setModel(oVizFrame.getModel("strategyResultModel"));
+
+              // Invalida el VizFrame para forzar un re-renderizado
+              oVizFrame.invalidate();
+              console.log(
+                "VizFrame invalidado y feeds re-establecidos para redibujar con nuevas medidas."
+              );
+            } else {
+              console.warn("Dataset no encontrado en el VizFrame.");
             }
-            // REMOVED: oVizFrame.getDataset()?.refresh(); and oVizFrame.invalidate();
-            // Data binding should handle the updates automatically.
+          } else {
+            console.warn("VizFrame con ID 'idVizFrame' no encontrado.");
           }
         },
 
