@@ -59,7 +59,6 @@ sap.ui.define(
           var oStrategyAnalysisModelData = {
             balance: 1000,
             stock: 1,
-            strategyKey: "",
             longSMA: 200,
             shortSMA: 50,
             rsi: 14, // Default RSI value
@@ -72,7 +71,6 @@ sap.ui.define(
               { key: "Reversión Simple", text: "Cargando textos..." },
             ],
             // IMPORTANT: Initialize as an ARRAY of strings for VizFrame FeedItem
-            // Ahora usamos los NOMBRES de las medidas definidos en el XML
             chartMeasuresFeed: ["PrecioCierre", "Señal BUY", "Señal SELL"],
           };
           var oStrategyAnalysisModel = new JSONModel(
@@ -131,6 +129,19 @@ sap.ui.define(
             signals: [],
             chart_data: [], // Initialize as empty array
             result: null,
+            // Propiedades para el resumen de simulación (ahora vienen de la API)
+            simulationName: "",
+            symbol: "",
+            startDate: null,
+            endDate: null,
+            TOTAL_BOUGHT_UNITS: 0,
+            TOTAL_SOLD_UNITS: 0,
+            REMAINING_UNITS: 0,
+            FINAL_CASH: 0,
+            FINAL_VALUE: 0,
+            FINAL_BALANCE: 0,
+            REAL_PROFIT: 0,
+            PERCENTAGE_RETURN: 0, // Nueva propiedad
           });
           this.getView().setModel(oStrategyResultModel, "strategyResultModel");
 
@@ -380,13 +391,14 @@ sap.ui.define(
           }
 
           // Adjust strategy name for API call if necessary
+          let apiStrategyName = strategy; // Usamos una variable para el nombre de la API
           if (strategy === "Reversión Simple") {
-            strategy = "reversionsimple";
+            apiStrategyName = "reversionsimple";
           }
 
           var SPECS = []; // Initialize as array
 
-          if (strategy === "reversionsimple") {
+          if (apiStrategyName === "reversionsimple") {
             const rsi = oStrategyModel.getProperty("/rsi");
             SPECS = [
               {
@@ -412,10 +424,11 @@ sap.ui.define(
           var oRequestBody = {
             SIMULATION: {
               SYMBOL: sSymbol,
-              STARTDATE: this._formatDate(
+              STARTDATE: this.formatDate(
+                // Usar el formateador público
                 oStrategyModel.getProperty("/startDate")
               ),
-              ENDDATE: this._formatDate(oStrategyModel.getProperty("/endDate")),
+              ENDDATE: this.formatDate(oStrategyModel.getProperty("/endDate")), // Usar el formateador público
               AMOUNT: oStrategyModel.getProperty("/stock"),
               USERID: "ARAMIS", // Assuming a fixed user ID for now
               SPECS: SPECS,
@@ -426,7 +439,7 @@ sap.ui.define(
           const PORT = 4004; // Ensure this matches your backend port
 
           fetch(
-            `http://localhost:${PORT}/api/inv/simulation?strategy=${strategy}`,
+            `http://localhost:${PORT}/api/inv/simulation?strategy=${apiStrategyName}`, // Usar apiStrategyName
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -439,15 +452,35 @@ sap.ui.define(
             .then((data) => {
               console.log("Datos recibidos:", data);
 
+              const aChartData = this._prepareTableData(
+                data.value?.[0]?.CHART_DATA || [],
+                data.value?.[0]?.SIGNALS || []
+              );
+              const aSignals = data.value?.[0]?.SIGNALS || [];
+              const oSummary = data.value?.[0]?.SUMMARY || {}; // Obtener el objeto SUMMARY
+
               // Update result model with transformed data for chart and table
               oResultModel.setData({
                 hasResults: true,
-                chart_data: this._prepareTableData(
-                  data.value?.[0]?.CHART_DATA || [],
-                  data.value?.[0]?.SIGNALS || []
-                ),
-                signals: data.value?.[0]?.SIGNALS || [],
-                result: data.value?.[0]?.result || 0,
+                chart_data: aChartData,
+                signals: aSignals,
+                result: oSummary.REAL_PROFIT || 0, // Usar REAL_PROFIT del SUMMARY
+                // Datos para el resumen de simulación (directamente del SUMMARY de la API)
+                simulationName:
+                  oStrategyModel
+                    .getProperty("/strategies")
+                    .find((s) => s.key === strategy)?.text || strategy,
+                symbol: sSymbol,
+                startDate: oStrategyModel.getProperty("/startDate"),
+                endDate: oStrategyModel.getProperty("/endDate"),
+                TOTAL_BOUGHT_UNITS: oSummary.TOTAL_BOUGHT_UNITS || 0,
+                TOTAL_SOLD_UNITS: oSummary.TOTAL_SOLD_UNITS || 0,
+                REMAINING_UNITS: oSummary.REMAINING_UNITS || 0,
+                FINAL_CASH: oSummary.FINAL_CASH || 0,
+                FINAL_VALUE: oSummary.FINAL_VALUE || 0,
+                FINAL_BALANCE: oSummary.FINAL_BALANCE || 0,
+                REAL_PROFIT: oSummary.REAL_PROFIT || 0,
+                PERCENTAGE_RETURN: oSummary.PERCENTAGE_RETURN || 0,
               });
 
               // After new data is loaded, ensure chart feeds are updated based on current strategy
@@ -462,15 +495,13 @@ sap.ui.define(
 
               // Update balance
               var currentBalance = oStrategyModel.getProperty("/balance") || 0;
-              var gainPerShare = data.value.result || 0; // Assuming result is per share
-              var stock = oStrategyModel.getProperty("/stock") || 1;
-              var totalGain = +(gainPerShare * stock).toFixed(2);
+              var totalGain = oSummary.REAL_PROFIT || 0; // Usar la ganancia real del SUMMARY
               oStrategyModel.setProperty(
                 "/balance",
                 currentBalance + totalGain
               );
               MessageToast.show(
-                "Se añadieron $" + totalGain + " a tu balance."
+                "Se añadieron $" + totalGain.toFixed(2) + " a tu balance."
               );
             })
             .catch((error) => {
@@ -481,16 +512,67 @@ sap.ui.define(
 
         /**
          * Helper function to format a Date object to "YYYY-MM-DD" string.
+         * Made public for use in XML view bindings.
          * @param {Date} oDate The date object to format.
          * @returns {string|null} The formatted date string or null if input is not a Date.
-         * @private
          */
-        _formatDate: function (oDate) {
+        formatDate: function (oDate) {
           return oDate
             ? DateFormat.getDateInstance({ pattern: "yyyy-MM-dd" }).format(
                 oDate
               )
             : null;
+        },
+
+        /**
+         * Helper function to format the count of signals by type.
+         * @param {Array} aSignals The array of signal objects.
+         * @param {string} sType The type of signal to count ('buy', 'sell', 'stop_loss').
+         * @returns {number} The count of signals of the specified type.
+         */
+        formatSignalCount: function (aSignals, sType) {
+          if (!Array.isArray(aSignals)) {
+            return 0;
+          }
+          return aSignals.filter((signal) => signal.TYPE === sType).length;
+        },
+
+        /**
+         * Helper function to format the count of stop loss signals.
+         * @param {Array} aSignals The array of signal objects.
+         * @returns {number} The count of stop loss signals.
+         */
+        formatStopLossCount: function (aSignals) {
+          if (!Array.isArray(aSignals)) {
+            return 0;
+          }
+          return aSignals.filter((signal) => signal.TYPE === "stop_loss")
+            .length;
+        },
+
+        /**
+         * Helper function to determine the ObjectStatus state based on signal type.
+         * @param {string} sType The type of signal ('buy', 'sell', 'stop_loss').
+         * @returns {string} The ObjectStatus state ('Success', 'Error', 'Warning', 'None').
+         */
+        formatSignalState: function (sType) {
+          if (sType === "buy") {
+            return "Success";
+          } else if (sType === "sell") {
+            return "Error";
+          } else if (sType === "stop_loss") {
+            return "Warning";
+          }
+          return "None";
+        },
+
+        /**
+         * Helper function to format a signal price.
+         * @param {number} fPrice The price of the signal.
+         * @returns {string} The formatted price string.
+         */
+        formatSignalPrice: function (fPrice) {
+          return fPrice ? fPrice.toFixed(2) + " USD" : "N/A";
         },
 
         /**
@@ -505,7 +587,8 @@ sap.ui.define(
           if (!Array.isArray(aData)) return [];
 
           return aData.map((oItem, index) => {
-            const signal = aSignals[index] || {};
+            // Encuentra la señal correspondiente para esta fecha, si existe
+            const signal = aSignals.find((s) => s.DATE === oItem.DATE) || {};
 
             let dateObject = null;
             // Convert date string "YYYY-MM-DD" to a Date object.
@@ -583,14 +666,20 @@ sap.ui.define(
                 signal.TYPE === "buy" ? parseFloat(oItem.CLOSE) : null,
               SELL_SIGNAL:
                 signal.TYPE === "sell" ? parseFloat(oItem.CLOSE) : null,
-              // Properties for table (e.g., combined indicator text)
+              // Propiedades para la tabla (ej. texto combinado de indicadores)
               INDICATORS_TEXT: indicatorsText, // Usamos la cadena construida dinámicamente
 
-              SIGNALS: signal.TYPE ? "ACCIÓN " + signal.TYPE : "SIN ACCIÓN",
+              SIGNALS: signal.TYPE
+                ? "ACCIÓN " + signal.TYPE.toUpperCase()
+                : "SIN ACCIÓN", // Convertir a mayúsculas
               RULES: signal.REASONING
                 ? "RAZÓN " + signal.REASONING
                 : "SIN RAZÓN",
               SHARES: signal.SHARES ?? 0,
+              // Añadir propiedades de señal para el fragmento de última operación
+              type: signal.TYPE || "",
+              price: signal.PRICE || 0,
+              reasoning: signal.REASONING || "",
             };
           });
         },
@@ -649,7 +738,7 @@ sap.ui.define(
               );
 
               // Forzar la actualización del dataset si es necesario (a veces ayuda)
-              oDataset.setModel(oVizFrame.getModel("strategyResultModel"));
+              // oDataset.setModel(oVizFrame.getModel("strategyResultModel")); // Esto puede ser redundante si el binding ya está bien
 
               // Invalida el VizFrame para forzar un re-renderizado
               oVizFrame.invalidate();
