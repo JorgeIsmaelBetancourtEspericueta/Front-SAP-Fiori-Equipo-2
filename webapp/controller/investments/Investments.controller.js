@@ -28,11 +28,15 @@ sap.ui.define(
         _bSidebarExpanded: true,
         _sSidebarOriginalSize: "380px",
 
+        /**
+         * Lifecycle hook that is called when the controller is initialized.
+         * Initializes models, sets default dates, and configures event delegates.
+         */
         onInit: function () {
-          // 1. Modelo para los símbolos (datos estáticos por ahora)
+          // 1. Initialize Symbol Model (static data for now)
           this._initSymbolModel();
 
-          // 2. Modelo para la tabla (vacío)
+          // 2. Initialize Price Data Model (empty for now)
           this.getView().setModel(
             new JSONModel({
               value: [],
@@ -40,30 +44,35 @@ sap.ui.define(
             "priceData"
           );
 
-          // 3. Configurar gráfica
+          // 3. Add event delegate for VizFrame configuration after rendering
           this.getView().addEventDelegate({
             onAfterRendering: this._onViewAfterRendering.bind(this),
           });
 
+          // 4. Initialize ViewModel for UI state (e.g., selected tab)
           var oViewModel = new sap.ui.model.json.JSONModel({
             selectedTab: "table",
           });
           this.getView().setModel(oViewModel, "viewModel");
 
-          // Inicializar el modelo de análisis
+          // 5. Initialize Strategy Analysis Model
           var oStrategyAnalysisModelData = {
             balance: 1000,
             stock: 1,
             strategyKey: "",
             longSMA: 200,
             shortSMA: 50,
+            rsi: 14, // Default RSI value
             startDate: null,
             endDate: null,
             controlsVisible: false,
             strategies: [
-              { key: "", text: "Cargando textos..." },
+              { key: "", text: "Cargando textos..." }, // Placeholder for i18n
               { key: "MACrossover", text: "Cargando textos..." },
+              { key: "Reversión Simple", text: "Cargando textos..." },
             ],
+            // IMPORTANT: Initialize as an ARRAY of strings for VizFrame FeedItem
+            chartMeasuresFeed: ["PrecioCierre", "Señal BUY", "Señal SELL"],
           };
           var oStrategyAnalysisModel = new JSONModel(
             oStrategyAnalysisModelData
@@ -73,26 +82,26 @@ sap.ui.define(
             "strategyAnalysisModel"
           );
 
-          // Modelo historial de inversiones
+          // 6. Initialize Investment History Model
           this.getView().setModel(
             new JSONModel({
               strategies: [
                 {
-                  date: new Date(2024, 4, 15), // Mayo 15, 2024
+                  date: new Date(2024, 4, 15),
                   strategyName: "Moving Average Crossover 1",
                   symbol: "AAPL",
                   result: 2500.5,
                   status: "Completado",
                 },
                 {
-                  date: new Date(2024, 4, 16), // Mayo 16, 2024
+                  date: new Date(2024, 4, 16),
                   strategyName: "Moving Average Crossover 2",
                   symbol: "TSLA",
                   result: -1200.3,
                   status: "Completado",
                 },
                 {
-                  date: new Date(2024, 4, 17), // Mayo 17, 2024
+                  date: new Date(2024, 4, 17),
                   strategyName: "Moving Average Crossover 3",
                   symbol: "MSFT",
                   result: 3400.8,
@@ -110,7 +119,7 @@ sap.ui.define(
             "historyModel"
           );
 
-          //Inicialización modelo de resultados
+          // 7. Initialize Strategy Result Model
           var oStrategyResultModel = new JSONModel({
             hasResults: false,
             idSimulation: null,
@@ -119,14 +128,15 @@ sap.ui.define(
             date_to: null,
             moving_averages: { short: null, long: null },
             signals: [],
-            chart_data: {},
+            chart_data: [], // Initialize as empty array
             result: null,
           });
           this.getView().setModel(oStrategyResultModel, "strategyResultModel");
 
+          // 8. Set default date range for analysis
           this._setDefaultDates();
 
-          // Cargar el ResourceBundle
+          // 9. Load ResourceBundle for i18n texts
           var oI18nModel = this.getOwnerComponent().getModel("i18n");
           if (oI18nModel) {
             try {
@@ -165,6 +175,10 @@ sap.ui.define(
               oStrategyAnalysisModel.setProperty("/strategies", [
                 { key: "", text: "Error i18n: Seleccione..." },
                 { key: "MACrossover", text: "Error i18n: Cruce Medias..." },
+                {
+                  key: "Reversión Simple",
+                  text: "Error i18n: Reversion Simple...",
+                },
               ]);
             }
           } else {
@@ -174,10 +188,11 @@ sap.ui.define(
             oStrategyAnalysisModel.setProperty("/strategies", [
               { key: "", text: "No i18n: Seleccione..." },
               { key: "MACrossover", text: "No i18n: Cruce Medias..." },
+              { key: "Reversión Simple", text: "No i18n: Reversion Simple..." },
             ]);
           }
 
-          // Para el tamaño del Sidebar
+          // 10. Store original sidebar size
           var oSidebarLayoutData = this.byId("sidebarLayoutData");
           if (oSidebarLayoutData) {
             this._sSidebarOriginalSize = oSidebarLayoutData.getSize();
@@ -189,7 +204,15 @@ sap.ui.define(
                 .getSize();
             }
           }
+
+          // 11. Call function to initialize chart measures feed based on initial strategy
+          this._updateChartMeasuresFeed();
         },
+
+        /**
+         * Event handler for tab selection.
+         * @param {sap.ui.base.Event} oEvent The event object
+         */
         onTabSelect: function (oEvent) {
           var sKey = oEvent.getParameter("key");
           this.getView()
@@ -197,10 +220,19 @@ sap.ui.define(
             .setProperty("/selectedTab", sKey);
         },
 
+        /**
+         * Event handler for after rendering of the view.
+         * Configures the VizFrame once it's rendered.
+         * @private
+         */
         _onViewAfterRendering: function () {
           this._configureChart();
         },
 
+        /**
+         * Initializes the symbol model with static data.
+         * @private
+         */
         _initSymbolModel: function () {
           const oSymbolModel = new JSONModel({
             symbols: [
@@ -213,37 +245,10 @@ sap.ui.define(
           this.getView().setModel(oSymbolModel, "symbolModel");
         },
 
-        /* onSymbolChange: function(oEvent) {
-        const sSymbol = oEvent.getSource().getSelectedKey();
-        this._loadPriceData(sSymbol).then(aData => {
-            const oPriceModel = this.getView().getModel("priceData");
-            oPriceModel.setProperty("/originalValue", aData); // Guarda los datos originales
-            oPriceModel.setProperty("/value", aData); // Muestra los datos en la gráfica
-        }).catch(error => {
-            console.error("Error al cargar los datos del símbolo:", error.message);
-        });
-    }, */
-        _transformDataForVizFrame: function (aApiData) {
-          if (!aApiData || !Array.isArray(aApiData)) {
-            return [];
-          }
-          return aApiData.map((oItem) => {
-            let dateValue = oItem.DATE || oItem.date;
-
-            let closeValue = parseFloat(oItem.CLOSE || oItem.close);
-            if (isNaN(closeValue)) closeValue = null;
-
-            return {
-              DATE: dateValue,
-              OPEN: parseFloat(oItem.OPEN) || null,
-              HIGH: parseFloat(oItem.HIGH) || null,
-              LOW: parseFloat(oItem.LOW) || null,
-              CLOSE: closeValue,
-              VOLUME: parseFloat(oItem.VOLUME) || null,
-            };
-          });
-        },
-
+        /**
+         * Configures the properties of the VizFrame.
+         * @private
+         */
         _configureChart: function () {
           const oVizFrame = this.byId("idVizFrame");
           if (!oVizFrame) {
@@ -262,7 +267,7 @@ sap.ui.define(
               },
             },
             valueAxis: {
-              title: { text: "Precio de Cierre (USD)" },
+              title: { text: "Precio (USD)" }, // Generalize title as it will show various measures
             },
             timeAxis: {
               title: { text: "Fecha" },
@@ -272,7 +277,7 @@ sap.ui.define(
               },
             },
             title: {
-              text: "Histórico de Precios de Acciones",
+              text: "Análisis de Precios e Indicadores",
             },
             legend: {
               visible: true,
@@ -295,7 +300,10 @@ sap.ui.define(
           );
         },
 
-        // PANEL DE ESTRATEGIAS
+        /**
+         * Sets default start and end dates for the analysis.
+         * @private
+         */
         _setDefaultDates: function () {
           var oStrategyAnalysisModel = this.getView().getModel(
             "strategyAnalysisModel"
@@ -310,6 +318,11 @@ sap.ui.define(
           );
         },
 
+        /**
+         * Event handler for strategy selection change.
+         * Updates visible controls and chart measures.
+         * @param {sap.ui.base.Event} oEvent The event object
+         */
         onStrategyChange: function (oEvent) {
           var oStrategyAnalysisModel = this.getView().getModel(
             "strategyAnalysisModel"
@@ -319,8 +332,16 @@ sap.ui.define(
             "/controlsVisible",
             !!sSelectedKey
           );
+          // Update strategyKey in the model
+          oStrategyAnalysisModel.setProperty("/strategyKey", sSelectedKey);
+          // Call function to update chart measures feed based on new strategy
+          this._updateChartMeasuresFeed();
         },
 
+        /**
+         * Event handler for running the analysis.
+         * Makes an API call to get simulation data and updates models.
+         */
         onRunAnalysisPress: function () {
           var oView = this.getView();
           var oStrategyModel = oView.getModel("strategyAnalysisModel");
@@ -332,12 +353,11 @@ sap.ui.define(
             this.byId("strategyAnalysisPanelChart")?.byId(
               "strategyAnalysisPanel"
             );
-          var oResultPanel =
-            this.byId("strategyResultPanel") ||
-            sap.ui.getCore().byId("strategyResultPanel");
+          var oResultPanel = this.byId("strategyResultPanel"); // Ensure this ID is correct
+
           var sSymbol = oView.byId("symbolSelector").getSelectedKey();
 
-          // Validaciones básicas
+          // Basic validations
           if (!oStrategyModel.getProperty("/strategyKey")) {
             MessageBox.warning("Seleccione una estrategia");
             return;
@@ -351,47 +371,42 @@ sap.ui.define(
             oAnalysisPanel.setExpanded(false);
           }
 
-          var strategy = this.getView()
-            .getModel("strategyAnalysisModel")
-            .getProperty("/strategyKey");
-          // Expande el panel de resultados
+          var strategy = oStrategyModel.getProperty("/strategyKey");
+          // Expand results panel
           if (oResultPanel) {
             oResultPanel.setExpanded(true);
           }
 
+          // Adjust strategy name for API call if necessary
           if (strategy === "Reversión Simple") {
             strategy = "reversionsimple";
           }
 
-          var SPECS = "";
+          var SPECS = []; // Initialize as array
 
           if (strategy === "reversionsimple") {
-            const rsi = this.getView()
-              .getModel("strategyAnalysisModel")
-              .getProperty("/rsi");
-
+            const rsi = oStrategyModel.getProperty("/rsi");
             SPECS = [
               {
                 INDICATOR: "rsi",
                 VALUE: rsi,
               },
             ];
-
-            console.log(SPECS); // Opcional: para verificar que se armó correctamente
           } else {
+            // Default for MACrossover or any other strategy
             SPECS = [
               {
                 INDICATOR: "SHORT_MA",
-                VALUE: oStrategyModel.getProperty("/shortSMA"), // Asegúrate de que el tipo de dato sea correcto (número si lo esperas como número)
+                VALUE: oStrategyModel.getProperty("/shortSMA"),
               },
               {
                 INDICATOR: "LONG_MA",
-                VALUE: oStrategyModel.getProperty("/longSMA"), // Asegúrate de que el tipo de dato sea correcto
+                VALUE: oStrategyModel.getProperty("/longSMA"),
               },
             ];
           }
 
-          // Configurar petición
+          // Configure request body
           var oRequestBody = {
             SIMULATION: {
               SYMBOL: sSymbol,
@@ -399,16 +414,14 @@ sap.ui.define(
                 oStrategyModel.getProperty("/startDate")
               ),
               ENDDATE: this._formatDate(oStrategyModel.getProperty("/endDate")),
-              AMOUNT: this.getView()
-                .getModel("strategyAnalysisModel")
-                .getProperty("/stock"),
-              USERID: "ARAMIS",
+              AMOUNT: oStrategyModel.getProperty("/stock"),
+              USERID: "ARAMIS", // Assuming a fixed user ID for now
               SPECS: SPECS,
             },
           };
 
-          // Llamada a la API
-          const PORT = 4004;
+          // API call
+          const PORT = 4004; // Ensure this matches your backend port
 
           fetch(
             `http://localhost:${PORT}/api/inv/simulation?strategy=${strategy}`,
@@ -424,7 +437,7 @@ sap.ui.define(
             .then((data) => {
               console.log("Datos recibidos:", data);
 
-              // Guardar datos en el modelo
+              // Update result model with transformed data for chart and table
               oResultModel.setData({
                 hasResults: true,
                 chart_data: this._prepareTableData(
@@ -435,12 +448,9 @@ sap.ui.define(
                 result: data.value?.[0]?.result || 0,
               });
 
-              // Sumar la ganancia al balance
-              var oStrategyModel = this.getView().getModel(
-                "strategyAnalysisModel"
-              );
+              // Update balance
               var currentBalance = oStrategyModel.getProperty("/balance") || 0;
-              var gainPerShare = data.value.result || 0;
+              var gainPerShare = data.value.result || 0; // Assuming result is per share
               var stock = oStrategyModel.getProperty("/stock") || 1;
               var totalGain = +(gainPerShare * stock).toFixed(2);
               oStrategyModel.setProperty(
@@ -457,7 +467,12 @@ sap.ui.define(
             });
         },
 
-        // Función auxiliar para formatear fechas
+        /**
+         * Helper function to format a Date object to "YYYY-MM-DD" string.
+         * @param {Date} oDate The date object to format.
+         * @returns {string|null} The formatted date string or null if input is not a Date.
+         * @private
+         */
         _formatDate: function (oDate) {
           return oDate
             ? DateFormat.getDateInstance({ pattern: "yyyy-MM-dd" }).format(
@@ -466,32 +481,97 @@ sap.ui.define(
             : null;
         },
 
-        // Función auxiliar para preparar datos para la tabla
+        /**
+         * Helper function to prepare raw API data for both table and VizFrame.
+         * Ensures dates are Date objects for the chart and numeric values are parsed.
+         * @param {Array} aData Raw data from API (e.g., CHART_DATA).
+         * @param {Array} aSignals Signal data from API.
+         * @returns {Array} Transformed data suitable for binding.
+         * @private
+         */
         _prepareTableData: function (aData, aSignals) {
           if (!Array.isArray(aData)) return [];
 
           return aData.map((oItem, index) => {
             const signal = aSignals[index] || {};
-            const oDate = new Date(oItem.DATE); // ← formato JS Date
-            const sFormattedDate = DateFormat.getDateInstance({
-              pattern: "yyyy-MM-dd",
-            }).format(oDate);
+
+            let dateObject = null;
+            // Convert date string "YYYY-MM-DD" to a Date object.
+            // This is CRUCIAL for VizFrame's time axis.
+            if (
+              typeof oItem.DATE === "string" &&
+              oItem.DATE.match(/^\d{4}-\d{2}-\d{2}$/)
+            ) {
+              dateObject = new Date(oItem.DATE);
+            } else if (oItem.DATE instanceof Date) {
+              dateObject = oItem.DATE;
+            }
+
+            // Extract indicator values from the INDICATORS array
+            let shortMA = null;
+            let longMA = null;
+            let rsi = null;
+            let sma = null;
+
+            if (Array.isArray(oItem.INDICATORS)) {
+              oItem.INDICATORS.forEach((indicator) => {
+                if (indicator.INDICATOR === "short_ma") {
+                  shortMA = parseFloat(indicator.VALUE);
+                } else if (indicator.INDICATOR === "long_ma") {
+                  longMA = parseFloat(indicator.VALUE);
+                } else if (indicator.INDICATOR === "rsi") {
+                  // Assuming API returns 'rsi' for Simple Reversion
+                  rsi = parseFloat(indicator.VALUE);
+                } else if (indicator.INDICATOR === "sma") {
+                  // Assuming API returns 'rsi' for Simple Reversion
+                  sma = parseFloat(indicator.VALUE);
+                }
+              });
+            }
+            // --- INICIO DE LA CORRECCIÓN PARA INDICATORS_TEXT ---
+            let indicatorParts = [];
+            if (shortMA !== null) {
+              indicatorParts.push(`SMA Corta: ${shortMA}`);
+            }
+            if (longMA !== null) {
+              indicatorParts.push(`SMA Larga: ${longMA}`);
+            }
+            if (rsi !== null) {
+              indicatorParts.push(`RSI: ${rsi}`);
+            }
+
+            if (sma !== null) {
+              indicatorParts.push(`SMA: ${sma}`);
+            }
+
+            const indicatorsText =
+              indicatorParts.length > 0 ? indicatorParts.join(", ") : "N/A";
 
             return {
-              DATE_GRAPH: oDate, // ← usado en el gráfico
-              DATE: sFormattedDate, // ← usado en la tabla
-              OPEN: oItem.OPEN,
-              HIGH: oItem.HIGH,
-              LOW: oItem.LOW,
-              CLOSE: oItem.CLOSE,
-              VOLUME: oItem.VOLUME,
-              INDICATORS:
-                oItem.INDICATORS[0].INDICATOR + " " + oItem.INDICATORS[0].VALUE,
-              RSI: oItem.INDICATORS[1]?.VALUE ?? null,
-              SHORT_MA: oItem.INDICATORS?.[0]?.SHORT_MA ?? null,
-              LONG_MA: oItem.INDICATORS?.[0]?.LONG_MA ?? null,
-              BUY_SIGNAL: signal.TYPE === "buy" ? oItem.CLOSE : null,
-              SELL_SIGNAL: signal.TYPE === "sell" ? oItem.CLOSE : null,
+              DATE_GRAPH: dateObject, // Property for VizFrame (Date object)
+              DATE: dateObject
+                ? DateFormat.getDateInstance({ pattern: "yyyy-MM-dd" }).format(
+                    dateObject
+                  )
+                : null, // Property for table (formatted string)
+              OPEN: parseFloat(oItem.OPEN),
+              HIGH: parseFloat(oItem.HIGH),
+              LOW: parseFloat(oItem.LOW),
+              CLOSE: parseFloat(oItem.CLOSE),
+              VOLUME: parseFloat(oItem.VOLUME),
+              // Properties for chart measures (will be null if not present for a given row)
+              SHORT_MA: shortMA,
+              LONG_MA: longMA,
+              RSI: rsi,
+              SMA: sma,
+              // Signal points on chart (only show value if a signal exists)
+              BUY_SIGNAL:
+                signal.TYPE === "BUY" ? parseFloat(oItem.CLOSE) : null,
+              SELL_SIGNAL:
+                signal.TYPE === "SELL" ? parseFloat(oItem.CLOSE) : null,
+              // Properties for table (e.g., combined indicator text)
+              INDICATORS_TEXT: indicatorsText, // Usamos la cadena construida dinámicamente
+
               SIGNALS: signal.TYPE ? "ACCIÓN " + signal.TYPE : "SIN ACCIÓN",
               RULES: signal.REASONING
                 ? "RAZÓN " + signal.REASONING
@@ -500,25 +580,75 @@ sap.ui.define(
             };
           });
         },
+
+        /**
+         * Dynamically updates the list of measures displayed on the VizFrame's value axis.
+         * This function is called onInit and when the strategy changes.
+         * @private
+         */
+        _updateChartMeasuresFeed: function () {
+          const oStrategyAnalysisModel = this.getView().getModel(
+            "strategyAnalysisModel"
+          );
+          const sStrategyKey =
+            oStrategyAnalysisModel.getProperty("/strategyKey");
+
+          let aMeasures = ["PrecioCierre", "Señal BUY", "Señal SELL"]; // Base measures always visible
+
+          if (sStrategyKey === "MACrossover") {
+            aMeasures.push("ShortMA", "LongMA");
+          } else if (sStrategyKey === "Reversión Simple") {
+            aMeasures.push("RSI", "SMA");
+          }
+          // Add more conditions for other strategies if needed
+
+          // IMPORTANT: Set the property in the model as an ARRAY, not a comma-separated string
+          oStrategyAnalysisModel.setProperty("/chartMeasuresFeed", aMeasures);
+
+          // Optional: Force VizFrame feed update if it's already rendered
+          // This ensures the chart reacts immediately without full re-render,
+          // though binding should handle it in most cases.
+          const oVizFrame = this.byId("idVizFrame");
+          if (oVizFrame) {
+            const oValueAxisFeed = oVizFrame
+              .getFeeds()
+              .find((feed) => feed.getUid() === "valueAxis");
+            if (oValueAxisFeed) {
+              // IMPORTANT: setValues also expects an array
+              oValueAxisFeed.setValues(aMeasures);
+            }
+            // REMOVED: oVizFrame.getDataset()?.refresh(); and oVizFrame.invalidate();
+            // Data binding should handle the updates automatically.
+          }
+        },
+
+        /**
+         * Event handler for refreshing chart data.
+         * Triggers a new analysis run with the current symbol.
+         */
         onRefreshChart: function () {
           const oSymbolModel = this.getView().getModel("symbolModel");
-          const sCurrentSymbol = oSymbolModel.getProperty("/selectedSymbol");
+          const sCurrentSymbol = this.byId("symbolSelector").getSelectedKey(); // Get selected symbol
 
           if (sCurrentSymbol) {
-            // Refresca los datos de la tabla y el gráfico
-            this._loadPriceData(sCurrentSymbol);
+            this.onRunAnalysisPress(); // Recalculate and update chart data
           } else {
             const aSymbols = oSymbolModel.getProperty("/symbols");
             if (aSymbols && aSymbols.length > 0) {
               const sDefaultSymbol = aSymbols[0].symbol;
-              oSymbolModel.setProperty("/selectedSymbol", sDefaultSymbol);
-              this._loadPriceData(sDefaultSymbol);
+              this.byId("symbolSelector").setSelectedKey(sDefaultSymbol); // Set default if none selected
+              this.onRunAnalysisPress();
             } else {
               MessageToast.show("Por favor, seleccione un símbolo.");
             }
           }
         },
 
+        /**
+         * Event handler for data point selection on the VizFrame.
+         * Updates the ViewModel with selected point's data.
+         * @param {sap.ui.base.Event} oEvent The event object
+         */
         onDataPointSelect: function (oEvent) {
           const oData = oEvent.getParameter("data");
           console.log("Datos seleccionados:", oData);
@@ -527,7 +657,7 @@ sap.ui.define(
             const oSelectedData = oData[0];
             console.log("Datos del punto seleccionado:", oSelectedData);
 
-            const sFecha = oSelectedData.data.DATE;
+            const sFecha = oSelectedData.data.DATE_GRAPH; // This should be a Date object
             const fPrecioCierre = oSelectedData.data.CLOSE;
 
             if (sFecha && fPrecioCierre !== undefined) {
@@ -538,7 +668,7 @@ sap.ui.define(
               });
             } else {
               console.warn(
-                "Los datos seleccionados no contienen DATE o CLOSE."
+                "Los datos seleccionados no contienen DATE_GRAPH o CLOSE."
               );
             }
           } else {
@@ -546,7 +676,10 @@ sap.ui.define(
           }
         },
 
-        //Historial de inversiones
+        /**
+         * Event handler for showing investment history popover.
+         * @param {sap.ui.base.Event} oEvent The event object
+         */
         onHistoryPress: function (oEvent) {
           if (!this._oHistoryPopover) {
             this._oHistoryPopover = sap.ui.xmlfragment(
@@ -560,103 +693,23 @@ sap.ui.define(
             this._oHistoryPopover.close();
             return;
           }
-
-          // Abrir la ventana
           this._oHistoryPopover.openBy(oEvent.getSource());
         },
 
-        // ******** FILTRO ********** //
+        /**
+         * Toggles the visibility of advanced filters in the history popover.
+         */
         onToggleAdvancedFilters: function () {
           if (!this._oHistoryPopover) return;
 
-          // Get panel directly from popover content
-          const oPanel = sap.ui.getCore().byId("advancedFiltersPanel");
+          const oPanel = sap.ui.getCore().byId("advancedFiltersPanel"); // Access panel from core if it's not a direct child of the view
 
           if (oPanel) {
             oPanel.setVisible(!oPanel.getVisible());
           } else {
-            console.warn("Advanced filters panel not found");
+            console.warn("Advanced filters panel not found.");
           }
         },
-
-        // Método del Sidebar
-        // onToggleSidebarPress: function() {
-        //     var oSidebarLayoutData = this.byId("sidebarLayoutData");
-
-        //     if (oSidebarLayoutData) {
-        //         if (this._bSidebarExpanded) {
-        //             this._sSidebarOriginalSize = oSidebarLayoutData.getSize();
-        //             oSidebarLayoutData.setSize("0px");
-        //         } else {
-        //             oSidebarLayoutData.setSize(this._sSidebarOriginalSize);
-        //         }
-        //         this._bSidebarExpanded = !this._bSidebarExpanded;
-
-        //         var oButton = this.byId("toggleSidebarButton");
-        //         if (oButton) {
-        //             oButton.setIcon(this._bSidebarExpanded ? "sap-icon://menu2" : "sap-icon://open-command-field");
-        //         }
-        //     } else {
-        //         console.error("No se pudo encontrar sidebarLayoutData para plegar/desplegar.");
-        //     }
-        // },
-
-        // onTimeIntervalChange: function(oEvent) {
-        //     const sKey = oEvent.getParameter("selectedItem").getKey();
-        //     const oPriceModel = this.getView().getModel("priceData");
-        //     const aOriginalData = oPriceModel.getProperty("/originalValue"); // Datos originales
-        //     const aData = aOriginalData || []; // Usa los datos originales si están disponibles
-
-        //     if (!aData || aData.length === 0) {
-        //         MessageToast.show("No hay datos originales disponibles para filtrar.");
-        //         return;
-        //     }
-
-        //     // Calcula la fecha de inicio según el intervalo seleccionado
-        //     const oEndDate = new Date();
-        //     let oStartDate;
-        //     switch (sKey) {
-        //         case "1D": // Último día
-        //             oStartDate = new Date(oEndDate);
-        //             oStartDate.setDate(oEndDate.getDate() - 1);
-        //             break;
-        //         case "1W": // Última semana
-        //             oStartDate = new Date(oEndDate);
-        //             oStartDate.setDate(oEndDate.getDate() - 7);
-        //             break;
-        //         case "1M": // Último mes
-        //             oStartDate = new Date(oEndDate);
-        //             oStartDate.setMonth(oEndDate.getMonth() - 1);
-        //             break;
-        //         case "1Y": // Último año
-        //             oStartDate = new Date(oEndDate);
-        //             oStartDate.setFullYear(oEndDate.getFullYear() - 1);
-        //             break;
-        //         case "ALL": // Historial completo
-        //         default:
-        //             oStartDate = null; // No filtrar
-        //             break;
-        //     }
-
-        //     // Filtra los datos según el intervalo
-        //     const oDateFormat = DateFormat.getDateInstance({ pattern: "MM/dd/yyyy" });
-        //     const aFilteredData = oStartDate
-        //         ? aData.filter(oItem => {
-        //             const oItemDate = new Date(oItem.DATE); // Usa new Date() para convertir la fecha
-        //             return oItemDate >= oStartDate && oItemDate <= oEndDate;
-        //         })
-        //         : aData;
-
-        //     if (aFilteredData.length === 0) {
-        //         MessageToast.show("No hay datos disponibles para el intervalo seleccionado.");
-        //         oPriceModel.setProperty("/value", aOriginalData); // Restaura los datos originales
-        //         return;
-        //     }
-
-        //     // Actualiza el modelo con los datos filtrados
-        //     console.log("Datos filtrados:", aFilteredData);
-        //     oPriceModel.setProperty("/value", aFilteredData);
-        // }
       }
     );
   }
