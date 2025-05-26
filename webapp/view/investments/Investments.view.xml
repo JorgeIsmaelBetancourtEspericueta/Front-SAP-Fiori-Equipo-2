@@ -245,10 +245,17 @@
                                                     <viz.data:MeasureDefinition
                                                         name="ShortMA"
                                                         value="{strategyResultModel>SHORT_MA}"
+                                                        visible="{= ${strategyAnalysisModel>/strategyKey} === 'MACrossover' }"
                                                     />
                                                     <viz.data:MeasureDefinition
                                                         name="LongMA"
                                                         value="{strategyResultModel>LONG_MA}"
+                                                        visible="{= ${strategyAnalysisModel>/strategyKey} === 'MACrossover' }"
+                                                    />
+                                                    <viz.data:MeasureDefinition
+                                                        name="RSI"
+                                                        value="{strategyResultModel>RSI}"
+                                                        visible="{= ${strategyAnalysisModel>/strategyKey} === 'Reversión Simple' }"
                                                     />
                                                     <viz.data:MeasureDefinition
                                                         name="Señal BUY"
@@ -270,7 +277,7 @@
                                             <viz.feeds:FeedItem
                                                 uid="valueAxis"
                                                 type="Measure"
-                                                values="PrecioCierre,ShortMA,LongMA,Señal BUY,Señal SELL"
+                                                values="PrecioCierre,Señal BUY,Señal SELL,RSI"
                                             />
                                         </viz:feeds>
                                     </viz:VizFrame>
