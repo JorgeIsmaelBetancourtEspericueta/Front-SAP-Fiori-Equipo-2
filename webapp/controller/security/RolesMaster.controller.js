@@ -330,7 +330,7 @@ sap.ui.define(
 
             if (!isDuplicate) {
               oData.PRIVILEGES.push({
-                PROCESSID: oData.NEW_PROCESSID,
+                PROCESSID: "IdProcess-"+oData.NEW_PROCESSID,
                 PRIVILEGEID: [privilegeId], 
               });
             } else {
