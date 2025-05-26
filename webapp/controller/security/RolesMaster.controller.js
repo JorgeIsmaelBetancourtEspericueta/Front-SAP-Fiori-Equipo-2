@@ -143,7 +143,6 @@ sap.ui.define(
             oSelectedRole
           );
 
-         
           if (
             !oSelectedRole ||
             oSelectedRole.ROLEID !== oRoleFromTable.ROLEID ||
@@ -161,6 +160,7 @@ sap.ui.define(
             );
           }
 
+          
           if (
             !oSelectedRole ||
             !oSelectedRole.ROLEID ||
@@ -188,7 +188,7 @@ sap.ui.define(
             NEW_PROCESSID: "", 
             NEW_PRIVILEGES: [], 
             isEditMode: true, 
-            isRoleIdEditable: false, 
+            isRoleIdEditable: false,
           };
 
           console.log(
@@ -197,8 +197,11 @@ sap.ui.define(
           );
 
          
-          const oRoleDialogModel = this.getView().getModel("newRoleModel"); 
+
+          const oRoleDialogModel = this.getView().getModel("newRoleModel"); // Usar newRoleModel como se define en initModels
           oRoleDialogModel.setData(oDialogData);
+
+         
 
           this._pDialog.then(function (oDialog) {
             oDialog.setTitle("Editar Rol");
@@ -256,6 +259,7 @@ sap.ui.define(
               oBackendData
             );
 
+          
             const aTransformedPrivileges = (oBackendData.PROCESSES || []).map(
               (process) => {
                 return {
@@ -437,13 +441,13 @@ sap.ui.define(
 
                     if (result && !result.error) {
                       MessageToast.show(options.successMessage);
-                     
+                    
                       await that._loadRolesDataIntoComponent(); 
 
                       that
                         .getOwnerComponent()
                         .getRouter()
-                        .navTo("RouteRolesMaster", {}, true); 
+                        .navTo("RouteRolesMaster", {}, true);
                     } else {
                       MessageBox.error(
                         "Error: " + (result?.message || "desconocido")
@@ -477,7 +481,7 @@ sap.ui.define(
               this.getOwnerComponent().getModel("roles");
 
             if (oRolesComponentModel) {
-              oRolesComponentModel.setData(data); 
+              oRolesComponentModel.setData(data);
               Log.info("Roles data reloaded into component model.");
             } else {
               this.getOwnerComponent().setModel(new JSONModel(data), "roles");
@@ -485,7 +489,7 @@ sap.ui.define(
                 "Roles model created and loaded into component for the first time."
               );
             }
-            return data;
+            return data; 
           } catch (error) {
             Log.error("Error loading roles data:", error);
             MessageBox.error(
@@ -602,7 +606,7 @@ sap.ui.define(
 
             const oRolesModel = new JSONModel({
               value: [], 
-              valueAll: aAllRoles,
+              valueAll: aAllRoles, 
               filterKey: "active", 
               searchQuery: "", 
             });
@@ -633,9 +637,9 @@ sap.ui.define(
           const view = this.getView();
           try {
             const response = await fetch(
-              `http://localhost:4004/api/security/crudLabels?action=get&labelid=${labelId}`,
+              `http://localhost:4004/api/security/crudValues?action=get&labelid=${labelId}`,
               {
-                method: "POST", 
+                method: "POST", // Assuming POST for GET is intentional
                 headers: { "Content-Type": "application/json" },
               }
             );
@@ -655,7 +659,6 @@ sap.ui.define(
           }
         },
 
-        // This function will be called by the SegmentedButton for filters
         onFilterRoles: function (oEvent) {
           const sKey = oEvent.getSource().getSelectedKey();
           const oRolesModel = this.getOwnerComponent().getModel("roles");
@@ -664,7 +667,6 @@ sap.ui.define(
         },
 
         onMultiSearch: function () {
-          // This function now only sets the search query and triggers the combined filter
           const sQuery = this.byId("searchRoleName").getValue().toLowerCase();
           const oRolesModel = this.getOwnerComponent().getModel("roles");
           oRolesModel.setProperty("/searchQuery", sQuery);
@@ -690,20 +692,18 @@ sap.ui.define(
               );
               break;
             case "inactive":
-              // Define 'inactive' as ACTIVED=false AND not DELETED
               aFilteredByStatus = aAllRoles.filter(
                 (r) =>
                   r.DETAIL_ROW?.ACTIVED === false &&
                   r.DETAIL_ROW?.DELETED === false
               );
               break;
-            case "deleted": // Added a new case for explicitly showing deleted roles
+            case "deleted": 
               aFilteredByStatus = aAllRoles.filter(
                 (r) => r.DETAIL_ROW?.DELETED === true
               );
               break;
             case "all":
-              // 'all' means all non-permanently deleted roles
               aFilteredByStatus = aAllRoles;
               break;
             default:
@@ -729,7 +729,6 @@ sap.ui.define(
                 return true;
               }
 
-              // Search in processes and privileges
               if (oRole.PROCESSES && Array.isArray(oRole.PROCESSES)) {
                 for (const oProcess of oRole.PROCESSES) {
                   const sProcessName = (
@@ -770,7 +769,6 @@ sap.ui.define(
           }
 
           oRolesModel.setProperty("/value", aFinalFilteredRoles);
-          // After filtering, if the selected role is no longer in the list, clear detail
           const oSelectedRoleData = this.getView()
             .getModel("selectedRole")
             .getData();
@@ -789,7 +787,6 @@ sap.ui.define(
           }
         },
 
-        // --- Row Mode Changes ---
         onRowModeChange: function (oEvent) {
           const sKey = oEvent.getSource().getSelectedKey();
           const oTable = this.byId("rolesTable");
