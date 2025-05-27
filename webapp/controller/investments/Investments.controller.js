@@ -721,7 +721,11 @@ sap.ui.define(
             }
             if (sma !== null && !isNaN(sma)) {
               // Incluir SMA simple si tiene valor
-              indicatorParts.push(`SMA: ${sma.toFixed(2)}`); // Formatear a 2 decimales
+              indicatorParts.push(
+                `SMA: ${sma.toFixed(2)} SMA 98%: ${(sma * 0.98).toFixed(
+                  2
+                )} SMA 102%: ${(sma * 1.02).toFixed(2)}`
+              ); // Formatear a 2 decimales
             }
             if (ma !== null && !isNaN(ma)) {
               indicatorParts.push(`MA: ${ma.toFixed(2)}`); // Formatear a 2 decimales
@@ -896,9 +900,10 @@ sap.ui.define(
               const sTipo = oSelectedFullData.type.toUpperCase();
               const fPrecio = oSelectedFullData.price;
               const iAcciones = oSelectedFullData.SHARES;
+              const sFecha = oSelectedFullData.DATE; // Ya viene formateada como "YYYY-MM-DD"
 
               MessageToast.show(
-                `ACCIÓN ${sTipo}: ${iAcciones} acciones a $${fPrecio?.toFixed(
+                `📅 ${sFecha} - ACCIÓN ${sTipo}: ${iAcciones} acciones a $${fPrecio?.toFixed(
                   2
                 )}`
               );
@@ -907,6 +912,7 @@ sap.ui.define(
             }
           }
         },
+
         /**
          * Event handler for showing investment history popover.
          * @param {sap.ui.base.Event} oEvent The event object
