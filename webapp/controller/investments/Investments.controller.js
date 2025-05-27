@@ -301,9 +301,36 @@ sap.ui.define(
           oVizFrame.setVizProperties({
             plotArea: {
               dataLabel: { visible: false },
-              window: {
-                start: null,
-                end: null,
+              window: { start: null, end: null },
+              dataPointStyle: {
+                rules: [
+                  {
+                    dataContext: { measureNames: ["Señal BUY"] },
+                    properties: {
+                      line: {
+                        visible: false, // Evita conexión entre puntos BUY
+                      },
+                      marker: {
+                        visible: true,
+                        shape: "triangleUp",
+                        size: 10,
+                      },
+                    },
+                  },
+                  {
+                    dataContext: { measureNames: ["Señal SELL"] },
+                    properties: {
+                      line: {
+                        visible: false, // Evita conexión entre puntos SELL
+                      },
+                      marker: {
+                        visible: true,
+                        shape: "triangleDown",
+                        size: 10,
+                      },
+                    },
+                  },
+                ],
               },
             },
             valueAxis: {
@@ -324,7 +351,7 @@ sap.ui.define(
             },
             toolTip: {
               visible: true,
-              formatString: "#,##0.00",
+              // Removed formatString: "#,##0.00", to allow custom tooltip from 'Info' dimension
             },
             interaction: {
               zoom: {
@@ -744,6 +771,11 @@ sap.ui.define(
               type: signal.TYPE || "",
               price: signal.PRICE || 0,
               reasoning: signal.REASONING || "",
+              TOOLTIP: signal.TYPE
+                ? `Acción: ${signal.TYPE.toUpperCase()}, Precio: $${signal.PRICE?.toFixed(
+                    2
+                  )}, Acciones: ${signal.SHARES}`
+                : "",
             };
           });
         },
