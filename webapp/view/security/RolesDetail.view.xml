@@ -96,7 +96,7 @@
                         text="Usuarios"
                         type="Emphasized"
                         icon="sap-icon://employee-approvals"
-                        press=".onShowCatalogs"
+                        press=".onShowUsers"
                     />
                 </m:Toolbar>
             </m:headerToolbar>

@@ -90,6 +90,7 @@ sap.ui.define(
           );
         },
 
+
         loadCatalogsOnce: async function () {
           if (!this._catalogsLoaded) {
             await this.loadCatalog("IdProcesses", "processCatalogModel");
@@ -329,7 +330,7 @@ sap.ui.define(
 
             if (!isDuplicate) {
               oData.PRIVILEGES.push({
-                PROCESSID: oData.NEW_PROCESSID,
+                PROCESSID: "IdProcess-"+oData.NEW_PROCESSID,
                 PRIVILEGEID: [privilegeId], 
               });
             } else {
@@ -410,6 +411,7 @@ sap.ui.define(
             Log.error("Error saving role:", err);
           }
         },
+        
         _handleRoleAction: async function (options) {
           const oModel = this.getView().getModel("selectedRole");
           const oData = oModel ? oModel.getData() : null;
