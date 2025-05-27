@@ -69,6 +69,7 @@ sap.ui.define(
               { key: "", text: "Cargando textos..." }, // Placeholder for i18n
               { key: "MACrossover", text: "Cargando textos..." },
               { key: "Reversión Simple", text: "Cargando textos..." },
+              { key: "Supertrend", text: "Cargando textos..." },
             ],
             // IMPORTANT: Initialize as an ARRAY of strings for VizFrame FeedItem
             chartMeasuresFeed: ["PrecioCierre", "Señal BUY", "Señal SELL"],
@@ -84,29 +85,7 @@ sap.ui.define(
           // 6. Initialize Investment History Model
           this.getView().setModel(
             new JSONModel({
-              strategies: [
-                {
-                  date: new Date(2024, 4, 15),
-                  strategyName: "Moving Average Crossover 1",
-                  symbol: "AAPL",
-                  result: 2500.5,
-                  status: "Completado",
-                },
-                {
-                  date: new Date(2024, 4, 16),
-                  strategyName: "Moving Average Crossover 2",
-                  symbol: "TSLA",
-                  result: -1200.3,
-                  status: "Completado",
-                },
-                {
-                  date: new Date(2024, 4, 17),
-                  strategyName: "Moving Average Crossover 3",
-                  symbol: "MSFT",
-                  result: 3400.8,
-                  status: "En Proceso",
-                },
-              ],
+              strategies: [], // <-- sin datos hardcoded
               filteredCount: 0,
               selectedCount: 0,
               filters: {
@@ -177,6 +156,12 @@ sap.ui.define(
                       "movingAverageReversionSimpleStrategy"
                     ),
                   },
+                  {
+                    key: "Supertrend",
+                    text: this._oResourceBundle.getText(
+                      "movingAverageSupertrendStrategy"
+                    ),
+                  },
                 ]);
                 console.log("Textos de i18n cargados correctamente.");
               } else {
@@ -201,6 +186,7 @@ sap.ui.define(
               { key: "", text: "No i18n: Seleccione..." },
               { key: "MACrossover", text: "No i18n: Cruce Medias..." },
               { key: "Reversión Simple", text: "No i18n: Reversion Simple..." },
+              { key: "Supertrend", text: "No i18n: Supertrend" },
             ]);
           }
 
@@ -230,6 +216,48 @@ sap.ui.define(
           this.getView()
             .getModel("viewModel")
             .setProperty("/selectedTab", sKey);
+        },
+
+        loadSimulationHistory: function () {
+          const oHistoryModel = this.getView().getModel("historyModel");
+          const PORT = 4004;
+
+          fetch(
+            `http://localhost:${PORT}/api/inv/crudSimulation?action=get`, // Usar apiStrategyName
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+            }
+          )
+            .then((response) => response.json())
+            .then((data) => {
+              // Asegúrate de que `data.value` sea un array de simulaciones
+              const simulations = data.value.map((item) => {
+                const inicioDate = item.STARTDATE;
+                const finDate = item.ENDDATE;
+
+                const rango = this.formatDateRange(inicioDate, finDate); // Usa tu propio formateador
+
+                return {
+                  strategyName: item.SIMULATIONID || "Sin nombre",
+                  inicio: inicioDate,
+                  fin: finDate,
+                  strategy: item.STRATEGYID,
+                  symbol: item.SYMBOL || "N/A",
+                  result: item.SUMMARY?.REAL_PROFIT || 0,
+                  idSimulation: item.SIMULATIONID,
+                  amount: item.AMOUNT,
+                  status: item.status || "Desconocido",
+                  rango: rango, // <-- aquí agregas el rango
+                };
+              });
+
+              oHistoryModel.setProperty("/strategies", simulations);
+              oHistoryModel.setProperty("/filteredCount", simulations.length);
+            })
+            .catch((err) => {
+              console.error("Error al cargar historial de simulaciones:", err);
+            });
         },
 
         /**
@@ -394,6 +422,8 @@ sap.ui.define(
           let apiStrategyName = strategy; // Usamos una variable para el nombre de la API
           if (strategy === "Reversión Simple") {
             apiStrategyName = "reversionsimple";
+          } else if (strategy === "Supertrend") {
+            apiStrategyName = "supertrend";
           }
 
           var SPECS = []; // Initialize as array
@@ -404,6 +434,25 @@ sap.ui.define(
               {
                 INDICATOR: "rsi",
                 VALUE: rsi,
+              },
+            ];
+          } else if (strategy === "supertrend") {
+            SPECS = [
+              {
+                INDICATOR: "ma_length",
+                VALUE: oStrategyModel.getProperty("/ma_length"), // Asegúrate de que el tipo de dato sea correcto (número si lo esperas como número)
+              },
+              {
+                INDICATOR: "atr",
+                VALUE: oStrategyModel.getProperty("/atr"), // Asegúrate de que el tipo de dato sea correcto
+              },
+              {
+                INDICATOR: "mult",
+                VALUE: oStrategyModel.getProperty("/mult"), // Asegúrate de que el tipo de dato sea correcto
+              },
+              {
+                INDICATOR: "rr",
+                VALUE: oStrategyModel.getProperty("/rr"), // Asegúrate de que el tipo de dato sea correcto
               },
             ];
           } else {
@@ -607,7 +656,8 @@ sap.ui.define(
             let longMA = null;
             let rsi = null;
             let sma = null; // Variable para la SMA simple
-
+            let ma = null;
+            let atr = null;
             if (Array.isArray(oItem.INDICATORS)) {
               oItem.INDICATORS.forEach((indicator) => {
                 // Asegúrate de que estos nombres coincidan EXACTAMENTE con lo que tu API devuelve
@@ -621,6 +671,12 @@ sap.ui.define(
                 } else if (indicator.INDICATOR === "sma") {
                   // Nuevo indicador para Reversión Simple
                   sma = parseFloat(indicator.VALUE);
+                } else if (indicator.INDICATOR === "ma") {
+                  // Nuevo indicador para longitud de MA
+                  ma = parseFloat(indicator.VALUE);
+                } else if (indicator.INDICATOR === "atr") {
+                  // Nuevo indicador para ATR
+                  atr = parseFloat(indicator.VALUE);
                 }
               });
             }
@@ -639,6 +695,12 @@ sap.ui.define(
             if (sma !== null && !isNaN(sma)) {
               // Incluir SMA simple si tiene valor
               indicatorParts.push(`SMA: ${sma.toFixed(2)}`); // Formatear a 2 decimales
+            }
+            if (ma !== null && !isNaN(ma)) {
+              indicatorParts.push(`MA: ${ma.toFixed(2)}`); // Formatear a 2 decimales
+            }
+            if (atr !== null && !isNaN(atr)) {
+              indicatorParts.push(`ATR: ${atr.toFixed(2)}`); // Formatear a 2 decimales
             }
 
             const indicatorsText =
@@ -662,6 +724,8 @@ sap.ui.define(
               RSI: rsi,
               SMA: sma, // Asegúrate de incluir SMA aquí para que el gráfico pueda acceder a él
               // Signal points on chart (only show value if a signal exists)
+              MA: ma,
+              ATR: atr,
               BUY_SIGNAL:
                 signal.TYPE === "buy" ? parseFloat(oItem.CLOSE) : null,
               SELL_SIGNAL:
@@ -705,6 +769,8 @@ sap.ui.define(
             aMeasures.push("SHORT_MA", "LONG_MA"); // Estos nombres coinciden en tu XML
           } else if (sStrategyKey === "Reversión Simple") {
             aMeasures.push("RSI", "SMA"); // Estos nombres coinciden en tu XML
+          } else if (sStrategyKey === "Supertrend") {
+            aMeasures.push("MA", "ATR");
           }
 
           // Actualiza la propiedad del modelo con las medidas actuales
@@ -820,26 +886,104 @@ sap.ui.define(
             this.getView().addDependent(this._oHistoryPopover);
           }
 
+          this.loadSimulationHistory(); // <-- perfecto
+
           if (this._oHistoryPopover.isOpen()) {
             this._oHistoryPopover.close();
             return;
           }
           this._oHistoryPopover.openBy(oEvent.getSource());
         },
-
-        /**
-         * Toggles the visibility of advanced filters in the history popover.
-         */
-        onToggleAdvancedFilters: function () {
-          if (!this._oHistoryPopover) return;
-
-          const oPanel = sap.ui.getCore().byId("advancedFiltersPanel"); // Access panel from core if it's not a direct child of the view
-
-          if (oPanel) {
-            oPanel.setVisible(!oPanel.getVisible());
-          } else {
-            console.warn("Advanced filters panel not found.");
+        onLoadStrategy: function () {
+          const oTable = sap.ui.getCore().byId("historyTable");
+          const aSelectedItems = oTable.getSelectedItems();
+          if (aSelectedItems.length === 0) {
+            MessageBox.information("Seleccione al menos una simulación.");
+            return;
           }
+
+          const oItem = aSelectedItems[0];
+          const oContext = oItem.getBindingContext("historyModel");
+          const idSimulation = oContext.getProperty("idSimulation");
+
+          const PORT = 4004;
+
+          fetch(
+            `http://localhost:${PORT}/api/inv/crudSimulation?action=get&idSimulation=${idSimulation}`, // Usar apiStrategyName
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+            }
+          )
+            .then((response) => response.json())
+            .then((data) => {
+              const simulation = data.value?.[0];
+              if (!simulation) {
+                MessageBox.error("No se encontró la simulación.");
+                return;
+              }
+
+              const oResultModel = this.getView().getModel(
+                "strategyResultModel"
+              );
+              const oStrategyAnalysisModel = this.getView().getModel(
+                "strategyAnalysisModel"
+              );
+
+              const chartData = this._prepareTableData(
+                simulation.CHART_DATA || [],
+                simulation.SIGNALS || []
+              );
+
+              // Establecer la estrategia usada si es conocida (ej: 'MACrossover', etc.)
+              // Aquí asumimos que la estrategia está en simulation.STRATEGY (ajústalo si el campo tiene otro nombre)
+              oStrategyAnalysisModel.setProperty(
+                "/strategyKey",
+                simulation.STRATEGYID || "MACrossover"
+              );
+
+              // Muy importante: actualizar chartMeasuresFeed con base en la estrategia
+              this._updateChartMeasuresFeed();
+
+              oResultModel.setData({
+                hasResults: true,
+                chart_data: chartData,
+                signals: simulation.SIGNALS || [],
+                result: simulation.SUMMARY?.REAL_PROFIT || 0,
+                simulationName: simulation.SIMULATIONNAME,
+                symbol: simulation.SYMBOL,
+                startDate: new Date(simulation.STARTDATE.replace(" ", "T")),
+                endDate: new Date(simulation.ENDDATE.replace(" ", "T")),
+                rango: this.formatDateRange(
+                  simulation.STARTDATE,
+                  simulation.ENDDATE
+                ),
+                TOTAL_BOUGHT_UNITS: simulation.SUMMARY?.TOTAL_BOUGHT_UNITS || 0,
+                TOTAL_SOLD_UNITS: simulation.SUMMARY?.TOTAL_SOLD_UNITS || 0,
+                REMAINING_UNITS: simulation.SUMMARY?.REMAINING_UNITS || 0,
+                FINAL_CASH: simulation.SUMMARY?.FINAL_CASH || 0,
+                FINAL_VALUE: simulation.SUMMARY?.FINAL_VALUE || 0,
+                FINAL_BALANCE: simulation.SUMMARY?.FINAL_BALANCE || 0,
+                REAL_PROFIT: simulation.SUMMARY?.REAL_PROFIT || 0,
+                PERCENTAGE_RETURN: simulation.SUMMARY?.PERCENTAGE_RETURN || 0,
+              });
+
+              MessageToast.show("Simulación cargada correctamente.");
+              this._oHistoryPopover.close();
+            })
+
+            .catch((err) => {
+              console.error("Error al cargar simulación:", err);
+              MessageBox.error("Error al cargar la simulación.");
+            });
+        },
+        formatDateRange: function (sStartDate, sEndDate) {
+          if (!sStartDate || !sEndDate) return "";
+
+          const oStartDate = new Date(sStartDate).toISOString().slice(0, 10);
+          const oEndDate = new Date(sEndDate).toISOString().slice(0, 10);
+
+          return oStartDate + " - " + oEndDate;
         },
       }
     );
