@@ -73,6 +73,13 @@
                             <layoutData>
                                 <FlexItemData growFactor="1" />
                             </layoutData>
+                            <SearchField
+                                id="tableSearchField"
+                                liveChange=".onSearchTable"
+                                width="100%"
+                                placeholder="Buscar en la tabla..."
+                                class="sapUiSmallMarginBottom"
+                            />
                             <ScrollContainer
                                 height="550px"
                                 vertical="true"
@@ -80,6 +87,7 @@
                                 width="100%"
                             >
                                 <Table
+                                    id="signalsTable"
                                     items="{strategyResultModel>/chart_data}"
                                     width="100%"
                                     growing="true"

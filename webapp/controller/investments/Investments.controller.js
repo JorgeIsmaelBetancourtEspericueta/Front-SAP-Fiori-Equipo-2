@@ -985,6 +985,40 @@ sap.ui.define(
 
           return oStartDate + " - " + oEndDate;
         },
+        onSearchTable: function (oEvent) {
+          const sQuery = oEvent.getParameter("newValue")?.toLowerCase() || "";
+          const oTable = this.byId("signalsTable");
+          const oBinding = oTable.getBinding("items");
+
+          if (!oBinding) {
+            console.warn("No hay binding en la tabla.");
+            return;
+          }
+
+          if (!sQuery) {
+            oBinding.filter([]); // Sin filtros si está vacío
+            return;
+          }
+
+          // Campos seguros para usar con "Contains" (deben ser Strings en el modelo)
+          const aTextFields = ["DATE", "SIGNALS", "RULES", "INDICATORS_TEXT"];
+
+          const aFilters = aTextFields.map(
+            (sField) =>
+              new sap.ui.model.Filter(
+                sField,
+                sap.ui.model.FilterOperator.Contains,
+                sQuery
+              )
+          );
+
+          const oFilter = new sap.ui.model.Filter({
+            filters: aFilters,
+            and: false, // Para que sea OR entre campos
+          });
+
+          oBinding.filter(oFilter);
+        },
       }
     );
   }
