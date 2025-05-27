@@ -880,31 +880,33 @@ sap.ui.define(
          */
         onDataPointSelect: function (oEvent) {
           const oData = oEvent.getParameter("data");
-          console.log("Datos seleccionados:", oData);
-
           if (oData && oData.length > 0) {
-            const oSelectedData = oData[0];
-            console.log("Datos del punto seleccionado:", oSelectedData);
+            const iRowIndex = oData[0].data._context_row_number;
 
-            const sFecha = oSelectedData.data.DATE_GRAPH; // This should be a Date object
-            const fPrecioCierre = oSelectedData.data.CLOSE;
+            // Obtener los datos reales desde el modelo usando el índice
+            const oModel = this.getView().getModel("strategyResultModel");
+            const aChartData = oModel.getProperty("/chart_data");
 
-            if (sFecha && fPrecioCierre !== undefined) {
-              const oViewModel = this.getView().getModel("viewModel");
-              oViewModel.setProperty("/selectedPoint", {
-                DATE: sFecha,
-                CLOSE: fPrecioCierre,
-              });
-            } else {
-              console.warn(
-                "Los datos seleccionados no contienen DATE_GRAPH o CLOSE."
+            const oSelectedFullData = aChartData[iRowIndex];
+
+            if (
+              oSelectedFullData?.type === "buy" ||
+              oSelectedFullData?.type === "sell"
+            ) {
+              const sTipo = oSelectedFullData.type.toUpperCase();
+              const fPrecio = oSelectedFullData.price;
+              const iAcciones = oSelectedFullData.SHARES;
+
+              MessageToast.show(
+                `ACCIÓN ${sTipo}: ${iAcciones} acciones a $${fPrecio?.toFixed(
+                  2
+                )}`
               );
+            } else {
+              MessageToast.show("No hay acción en este punto.");
             }
-          } else {
-            console.warn("No se seleccionaron datos.");
           }
         },
-
         /**
          * Event handler for showing investment history popover.
          * @param {sap.ui.base.Event} oEvent The event object
