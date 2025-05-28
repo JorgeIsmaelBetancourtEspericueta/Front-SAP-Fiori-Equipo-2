@@ -28,6 +28,7 @@
                     text="Filtros Avanzados"
                     type="Transparent"
                     press=".onToggleAdvancedFilters"
+                    visible="false"
                 />
             </OverflowToolbar>
 

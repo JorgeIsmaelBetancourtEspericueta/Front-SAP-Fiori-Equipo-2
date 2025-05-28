@@ -1084,6 +1084,16 @@ sap.ui.define(
           oModel.setProperty("/strategies", aFilteredItems);
           oModel.setProperty("/filteredCount", aFilteredItems.length);
         },
+        onToggleAdvancedFilters: function () {
+          const oPanel = sap.ui.getCore().byId("advancedFiltersPanel");
+          if (!oPanel) {
+            console.warn("Panel de filtros no encontrado");
+            return;
+          }
+
+          const bVisible = oPanel.getVisible();
+          oPanel.setVisible(!bVisible);
+        },
       }
     );
   }
