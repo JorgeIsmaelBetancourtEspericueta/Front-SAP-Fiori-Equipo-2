@@ -1059,6 +1059,31 @@ sap.ui.define(
 
           oBinding.filter(oFilter);
         },
+        onLiveSearch: function (oEvent) {
+          const sQuery = oEvent.getParameter("newValue")?.toLowerCase() || "";
+          const oModel = this.getView().getModel("historyModel");
+          const aOriginalItems = oModel.getProperty("/_originalStrategies");
+
+          // Si no hay respaldo, lo creamos
+          if (!aOriginalItems || !Array.isArray(aOriginalItems)) {
+            const aCurrent = oModel.getProperty("/strategies") || [];
+            oModel.setProperty("/_originalStrategies", aCurrent);
+          }
+
+          const aToFilter = oModel.getProperty("/_originalStrategies");
+
+          const aFilteredItems = aToFilter.filter((item) => {
+            return Object.values(item).some((value) => {
+              if (typeof value === "string" || typeof value === "number") {
+                return value.toString().toLowerCase().includes(sQuery);
+              }
+              return false;
+            });
+          });
+
+          oModel.setProperty("/strategies", aFilteredItems);
+          oModel.setProperty("/filteredCount", aFilteredItems.length);
+        },
       }
     );
   }

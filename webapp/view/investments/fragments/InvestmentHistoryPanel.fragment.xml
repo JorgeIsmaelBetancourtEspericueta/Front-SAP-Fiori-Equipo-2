@@ -16,11 +16,12 @@
             <OverflowToolbar class="">
                 <SearchField
                     id="searchField"
-                    placeholder="Buscar por nombre o símbolo..."
-                    search=".onSearch"
+                    placeholder="Buscar en cualquier campo..."
+                    liveChange="onLiveSearch"
                     width="300px"
-                    showSearchButton="true"
+                    showSearchButton="false"
                 />
+
                 <ToolbarSpacer />
                 <Button
                     icon="sap-icon://filter"
