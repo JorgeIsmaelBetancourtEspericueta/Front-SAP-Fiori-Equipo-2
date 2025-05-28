@@ -73,6 +73,13 @@
                             <layoutData>
                                 <FlexItemData growFactor="1" />
                             </layoutData>
+                            <SearchField
+                                id="tableSearchField"
+                                liveChange=".onSearchTable"
+                                width="100%"
+                                placeholder="Buscar en la tabla..."
+                                class="sapUiSmallMarginBottom"
+                            />
                             <ScrollContainer
                                 height="550px"
                                 vertical="true"
@@ -80,6 +87,7 @@
                                 width="100%"
                             >
                                 <Table
+                                    id="signalsTable"
                                     items="{strategyResultModel>/chart_data}"
                                     width="100%"
                                     growing="true"
@@ -230,6 +238,10 @@
                                                         value="{DATE_GRAPH}"
                                                         dataType="date"
                                                     />
+                                                    <!-- <viz.data:DimensionDefinition
+                                                        name="Info"
+                                                        value="{TOOLTIP}"
+                                                    /> -->
                                                 </viz.data:dimensions>
                                                 <viz.data:measures>
                                                     <viz.data:MeasureDefinition
@@ -253,12 +265,21 @@
                                                         value="{SMA}"
                                                     />
                                                     <viz.data:MeasureDefinition
+                                                        name="MA"
+                                                        value="{MA}"
+                                                    />
+                                                    <viz.data:MeasureDefinition
+                                                        name="ATR"
+                                                        value="{ATR}"
+                                                    />
+                                                    <viz.data:MeasureDefinition
                                                         name="Señal BUY"
                                                         value="{BUY_SIGNAL}"
                                                     />
                                                     <viz.data:MeasureDefinition
                                                         name="Señal SELL"
                                                         value="{SELL_SIGNAL}"
+                                                        unit="{= 'Unidades: ' + ${SHARES} + ', Precio: ' + ${price} + ' USD'}"
                                                     />
                                                 </viz.data:measures>
                                             </viz.data:FlattenedDataset>
