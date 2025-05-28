@@ -613,7 +613,7 @@ sap.ui.define([
                     
                     oModel.setData(oTableData);
                 }
-                this._originalUserId = null;
+                //this._originalUserId = null;
                 // Actualizar this.selectedUser para que apunte al objeto actualizado
                 this.selectedUser = oTableData.value[idx];
                 this._oEditUserDialog.close();
@@ -910,7 +910,39 @@ sap.ui.define([
         },
 
         onSearchUser: function () {
-            //Aplicar el filtro de búsqueda para la tabla
+            var oView = this.getView();
+            var oTable = this.byId("IdTable1UsersManageTable");
+            var oModel = oTable.getModel();
+            var aAllUsers = oModel.getData().value || [];
+
+            // Obtén el valor del input de búsqueda
+            var sQuery = oView.byId("SearchUserField").getValue().toLowerCase();
+
+            if (!sQuery) {
+                // Si no hay búsqueda, recarga todos los usuarios
+                this.loadUsers();
+                return;
+            }
+
+            // Filtra por cualquier campo del usuario
+            var aFiltered = aAllUsers.filter(function(user) {
+                return Object.values(user).some(function(val) {
+                    if (sQuery === "activo" && user.DETAIL_ROW && user.DETAIL_ROW.ACTIVED === true) {
+                        return true;
+                    }
+                    if (sQuery === "inactivo" && user.DETAIL_ROW && user.DETAIL_ROW.ACTIVED === false) {
+                        return true;
+                    }
+                    // convertir los objetos a string para la búsqueda
+                    if (typeof val === "object" && val !== null) {
+                        console.log("Valor no es un string:", val);
+                        return JSON.stringify(val).toLowerCase().includes(sQuery);
+                    }
+                    return String(val).toLowerCase().includes(sQuery);
+                });
+            });
+
+            oModel.setProperty("/value", aFiltered);
         },
 
         onRefresh: function(){
