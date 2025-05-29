@@ -801,7 +801,7 @@ if (isDuplicate) {
             }
         },
 
-        desactivateUser: function(UserId){
+        desactivateUser: function (UserId) {
             var that = this;
             fetch(`http://localhost:4004/api/security/deleteAny?borrado=logic&userid=${encodeURIComponent(UserId)}`, {
                 method: "POST",
@@ -809,30 +809,38 @@ if (isDuplicate) {
                     "Content-Type": "application/json"
                 }
             })
-            .then(async response => {
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error("Error al desactivar usuario: " + errorText);
-                }
-                return response.json();
-            })
-            .then(data => {
-                MessageToast.show("Usuario desactivado correctamente");
-                // Se actualiza el modelo localmente sin volver a llamar a la API
-                var oTable = that.byId("IdTable1UsersManageTable");
-                var oModel = oTable.getModel();
-                var oData = oModel.getData();
-                var user = oData.value.find(u => u.USERID === UserId);
-                if (user) {
-                    user.DETAIL_ROW.ACTIVED = false;
-                    user.DETAIL_ROW.DELETED = true;
-                }
-                oModel.setData(oData);
-            })
-            .catch(error => {
-                MessageBox.error("No se pudo desactivar el usuario:\n" + error.message);
-            });
+                .then(async response => {
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error("Error al desactivar usuario: " + errorText);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    MessageToast.show("Usuario desactivado correctamente");
+                    // Se actualiza el modelo localmente sin volver a llamar a la API
+                    var oTable = that.byId("IdTable1UsersManageTable");
+                    var oModel = oTable.getModel();
+                    var oData = oModel.getData();
+                    var user = oData.value.find(u => u.USERID === UserId);
+
+                    if (user) {
+                        // Asegurar que DETAIL_ROW exista y tenga la estructura mínima
+                        user.DETAIL_ROW = {
+                            ...user.DETAIL_ROW,
+                            ACTIVED: false,
+                            DELETED: true,
+                            DETAIL_ROW_REG: user.DETAIL_ROW?.DETAIL_ROW_REG || []
+                        };
+                    }
+
+                    oModel.setData(oData);
+                })
+                .catch(error => {
+                    MessageBox.error("No se pudo desactivar el usuario:\n" + error.message);
+                });
         },
+
 
 
         // ===================================================
@@ -858,8 +866,7 @@ if (isDuplicate) {
                 MessageToast.show("Selecciona un usuario para activar");
             }
         },
-
-        activateUser: function(UserId){
+        activateUser: function (UserId) {
             var that = this;
             fetch(`http://localhost:4004/api/security/deleteAny?borrado=activar&userid=${encodeURIComponent(UserId)}`, {
                 method: "POST",
@@ -867,29 +874,36 @@ if (isDuplicate) {
                     "Content-Type": "application/json"
                 }
             })
-            .then(async response => {
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error("Error al activar usuario: " + errorText);
-                }
-                return response.json();
-            })
-            .then(data => {
-                MessageToast.show("Usuario activado correctamente");
-                // Se actualiza el modelo localmente sin volver a llamar a la API
-                var oTable = that.byId("IdTable1UsersManageTable");
-                var oModel = oTable.getModel();
-                var oData = oModel.getData();
-                var user = oData.value.find(u => u.USERID === UserId);
-                if (user) {
-                    user.DETAIL_ROW.ACTIVED = true;
-                    user.DETAIL_ROW.DELETED = false;
-                }
-                oModel.setData(oData);
-            })
-            .catch(error => {
-                MessageBox.error("No se pudo activar el usuario:\n" + error.message);
-            });
+                .then(async response => {
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error("Error al activar usuario: " + errorText);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    MessageToast.show("Usuario activado correctamente");
+                    // Se actualiza el modelo localmente sin volver a llamar a la API
+                    var oTable = that.byId("IdTable1UsersManageTable");
+                    var oModel = oTable.getModel();
+                    var oData = oModel.getData();
+                    var user = oData.value.find(u => u.USERID === UserId);
+
+                    if (user) {
+                        // Asegurar que DETAIL_ROW exista y tenga la estructura mínima
+                        user.DETAIL_ROW = {
+                            ...user.DETAIL_ROW,
+                            ACTIVED: true,
+                            DELETED: false,
+                            DETAIL_ROW_REG: user.DETAIL_ROW?.DETAIL_ROW_REG || []
+                        };
+                    }
+
+                    oModel.setData(oData);
+                })
+                .catch(error => {
+                    MessageBox.error("No se pudo activar el usuario:\n" + error.message);
+                });
         },
 
 
