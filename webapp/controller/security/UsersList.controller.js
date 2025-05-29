@@ -575,6 +575,7 @@ sap.ui.define([
                 ROLES
             };
             console.log("Usuario a actualizar:", JSON.stringify(oUser));
+            this._originalUserId = this.selectedUser.USERID;
             var oTable = this.byId("IdTable1UsersManageTable");
             var aAllUsers = oTable.getModel().getData().value;
             var error = this._validateUser(oUser, aAllUsers, true);
@@ -605,7 +606,7 @@ sap.ui.define([
                 var oModel = oTable.getModel();
                 var oTableData = oModel.getData();
 
-                this._originalUserId = this.selectedUser.USERID;
+                
                 var idx = oTableData.value.findIndex(u => u.USERID === this._originalUserId);
                 if (idx !== -1) {
                     oTableData.value[idx] = oUser;
@@ -688,11 +689,20 @@ sap.ui.define([
             }
 
             // USERID único
-            if (!isEdit || (isEdit && oUser.USERID !== this._originalUserId)) {
-                if (aAllUsers.some(u => u.USERID === oUser.USERID)) {
-                    errors.push("El USERID ya existe. Debe ser único.");
-                }
-            }
+            const isDuplicate = aAllUsers.some(u =>
+    u.USERID === oUser.USERID && u.USERID !== this._originalUserId
+);
+
+if (isDuplicate) {
+    errors.push("El USERID ya existe. Debe ser único.");
+}
+
+
+            // if (!isEdit || (isEdit && oUser.USERID !== this._originalUserId)) {
+            //     if (aAllUsers.some(u => u.USERID === oUser.USERID)) {
+            //         errors.push("El USERID ya existe. Debe ser único.");
+            //     }
+            // }
 
             // Email válido
             if (!this.isValidEmail(oUser.EMAIL)) {
