@@ -81,7 +81,7 @@ sap.ui.define([
             var oComboBox = oEvent.getSource();
             var sSelectedKey = oComboBox.getSelectedKey();
 
-            // Limpiar el ComboBox de departamentos
+            // Limpiar el ComboBox de cedis
             var oView = this.getView();
             /** @type {sap.m.ComboBox} */
             var oComboBoxDepto = /** @type {sap.m.ComboBox} */ (sap.ui.core.Fragment.byId(oView.getId(), "editcomboBoxCedis"));
@@ -91,6 +91,63 @@ sap.ui.define([
 
             /** @type {sap.m.ComboBox} */
             var oComboBoxDepto = /** @type {sap.m.ComboBox} */ (sap.ui.core.Fragment.byId(oView.getId(), "comboBoxCedis"));
+            if (oComboBoxDepto && typeof oComboBoxDepto.setSelectedKey === "function") {
+                oComboBoxDepto.setSelectedKey(""); // Limpia la selección
+            }
+
+            // Limpiar el ComboBox de departamentos
+            var oView = this.getView();
+            /** @type {sap.m.ComboBox} */
+            var oComboBoxDepto = /** @type {sap.m.ComboBox} */ (sap.ui.core.Fragment.byId(oView.getId(), "editcomboBoxDepartments"));
+            if (oComboBoxDepto && typeof oComboBoxDepto.setSelectedKey === "function") {
+                oComboBoxDepto.setSelectedKey(""); // Limpia la selección
+            }
+
+            /** @type {sap.m.ComboBox} */
+            var oComboBoxDepto = /** @type {sap.m.ComboBox} */ (sap.ui.core.Fragment.byId(oView.getId(), "comboBoxDepartments"));
+            if (oComboBoxDepto && typeof oComboBoxDepto.setSelectedKey === "function") {
+                oComboBoxDepto.setSelectedKey(""); // Limpia la selección
+            }
+
+            this.loadCedis(sSelectedKey);
+        },
+
+        loadCedis: function(companyId) {
+            var oView = this.getView();
+            var oCedisModel = new JSONModel();
+
+            fetch("http://localhost:4004/api/security/crudValues?action=get&labelid=IdCedis", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                // Filtramos los departamentos que correspondan a la empresa seleccionada
+                var filtered = data.value.filter(function(depto) {
+                    return depto.VALUEPAID === `IdCompanies-${companyId}`;
+                });
+                oCedisModel.setData({ cedis: filtered });
+                oView.setModel(oCedisModel, "cedisModel");
+            })
+            .catch(err => MessageToast.show("Error al cargar departamentos: " + err.message));
+        },
+
+        onCediSelected: function(oEvent) {
+            var oComboBox = oEvent.getSource();
+            var sSelectedKey = oComboBox.getSelectedKey();
+
+            // Limpiar el ComboBox de departamentos
+            var oView = this.getView();
+            /** @type {sap.m.ComboBox} */
+            var oComboBoxDepto = /** @type {sap.m.ComboBox} */ (sap.ui.core.Fragment.byId(oView.getId(), "editcomboBoxDepartments"));
+            if (oComboBoxDepto && typeof oComboBoxDepto.setSelectedKey === "function") {
+                oComboBoxDepto.setSelectedKey(""); // Limpia la selección
+            }
+
+            /** @type {sap.m.ComboBox} */
+            var oComboBoxDepto = /** @type {sap.m.ComboBox} */ (sap.ui.core.Fragment.byId(oView.getId(), "comboBoxDepartments"));
             if (oComboBoxDepto && typeof oComboBoxDepto.setSelectedKey === "function") {
                 oComboBoxDepto.setSelectedKey(""); // Limpia la selección
             }
@@ -112,9 +169,9 @@ sap.ui.define([
             .then(data => {
                 // Filtramos los departamentos que correspondan a la empresa seleccionada
                 var filtered = data.value.filter(function(depto) {
-                    return depto.VALUEPAID === `IdCompanies-${companyId}`;
+                    return depto.VALUEPAID === `IdCedis-${companyId}`;
                 });
-                oDeptosModel.setData({ cedis: filtered });
+                oDeptosModel.setData({ departments: filtered });
                 oView.setModel(oDeptosModel, "deptosModel");
             })
             .catch(err => MessageToast.show("Error al cargar departamentos: " + err.message));
@@ -289,19 +346,12 @@ sap.ui.define([
 
             // Obtener el departamento seleccionado
             /** @type {sap.m.ComboBox} */
-            var oComboBoxDepto = /** @type {sap.m.ComboBox} */ (sap.ui.core.Fragment.byId(oView.getId(), "comboBoxCedis"));
-            var DEPTOID = oComboBoxDepto.getProperty("selectedKey");
-            var oDeptosModel = oView.getModel("deptosModel");
-            if (oDeptosModel) {
-                var aDeptos = oDeptosModel.getProperty("/cedis");
-                var oSelectedDepto = aDeptos.find(function(depto) {
-                    return depto.VALUEID == DEPTOID;
-            });
-            }
+            var oComboBoxDepto = /** @type {sap.m.ComboBox} */ (sap.ui.core.Fragment.byId(oView.getId(), "comboBoxDepartments"));
+            var DEPARTMENT = oComboBoxDepto.getSelectedItem() ? oComboBoxDepto.getSelectedItem().getText() : "";
             
-            // Extraer los valores del departamento seleccionado
-            var DEPARTMENT = oSelectedDepto ? oSelectedDepto.VALUE : "";
-            var CEDIID = oSelectedDepto ? oSelectedDepto.VALUEID : "";
+            /** @type {sap.m.ComboBox} */
+            var oComboBoxDepto = /** @type {sap.m.ComboBox} */ (sap.ui.core.Fragment.byId(oView.getId(), "comboBoxCedis"));
+            var CEDIID = oComboBoxDepto.getProperty("selectedKey") ? oComboBoxDepto.getProperty("selectedKey") : "";
 
             // Obtener roles seleccionados
             /** @type {sap.m.VBox} */
@@ -428,7 +478,8 @@ sap.ui.define([
             var that = this;
             this.loadRoles();
             this.loadCompanies();
-            this.loadDeptos(this.selectedUser.COMPANYID);
+            this.loadCedis(this.selectedUser.COMPANYID);
+            this.loadDeptos(this.selectedUser.CEDIID);
 
             if (!this._oEditUserDialog) {
                 Fragment.load({
@@ -447,6 +498,11 @@ sap.ui.define([
                 var oCombo = /** @type {sap.m.ComboBox} */ (sap.ui.core.Fragment.byId(oView.getId(), "comboBoxCompanies"));
                 if (oCombo && this.selectedUser.COMPANYID) {
                     oCombo.setSelectedKey(this.selectedUser.COMPANYID);
+                }
+
+                var oCombo = /** @type {sap.m.ComboBox} */ (sap.ui.core.Fragment.byId(oView.getId(), "comboBoxDepartments"));
+                if (oCombo && this.selectedUser.DEPARTMENT) {
+                    oCombo.setSelectedKey(this.selectedUser.DEPARTMENT);
                 }
 
                 this._fillEditRolesVBox();
@@ -509,15 +565,13 @@ sap.ui.define([
             // Obtener el departamento seleccionado
             /** @type {sap.m.ComboBox} */
             var oComboBoxDepto = /** @type {sap.m.ComboBox} */ 
+            (sap.ui.core.Fragment.byId(oView.getId(), "editcomboBoxDepartments"));
+            var DEPARTMENT = oComboBoxDepto.getSelectedItem() ? oComboBoxDepto.getSelectedItem().getText() : "";
+            
+            /** @type {sap.m.ComboBox} */
+            var oComboBoxCedi = /** @type {sap.m.ComboBox} */ 
             (sap.ui.core.Fragment.byId(oView.getId(), "editcomboBoxCedis"));
-            var DEPTOID = oComboBoxDepto.getSelectedKey();
-            var oDeptosModel = oView.getModel("deptosModel");
-            var aDeptos = oDeptosModel.getProperty("/cedis");
-            var oSelectedDepto = aDeptos.find(function(depto) {
-                return depto.VALUEID == DEPTOID;
-            });
-            var DEPARTMENT = oSelectedDepto ? oSelectedDepto.VALUE : "";
-            var CEDIID = oSelectedDepto ? oSelectedDepto.VALUEID : "";
+            var CEDIID = oComboBoxCedi.getSelectedKey() ? oComboBoxCedi.getSelectedKey() : "";
 
             // Obtener roles seleccionados
             var oVBox = oView.byId("editselectedRolesVBox");
