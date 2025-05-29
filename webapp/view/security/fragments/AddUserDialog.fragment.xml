@@ -60,13 +60,15 @@
       <Input
           id="inputUserPhoneNumber"
           placeholder="Número telefónico"
-          value="{newUserModel>/PHONENUMBER}" />
+          value="{newUserModel>/PHONENUMBER}" 
+          liveChange=".onPhoneLiveChange"/>
 
       <!-- Campo existente: Correo Electrónico -->
       <Input
           id="inputUserEmail"
           placeholder="Correo Electrónico"
-          value="{newUserModel>/EMAIL}" />
+          value="{newUserModel>/EMAIL}"
+          type="Email" />
 
       <!-- Campo existente: Fecha de nacimiento -->
       <DatePicker

@@ -734,7 +734,7 @@ sap.ui.define([
 
             // Campos obligatorios
             const requiredFields = [
-                "USERID", "PASSWORD", "FIRSTNAME","LASTNAME", "EMAIL", "COMPANYID", "DEPARTMENT", "ROLES" 
+                "USERID", "PASSWORD", "FIRSTNAME","LASTNAME", "EMAIL", "COMPANYID", "DEPARTMENT"
             ];
             for (let field of requiredFields) {
                 if (!oUser[field] || String(oUser[field]).trim() === "") {
@@ -744,12 +744,12 @@ sap.ui.define([
 
             // USERID único
             const isDuplicate = aAllUsers.some(u =>
-    u.USERID === oUser.USERID && u.USERID !== this._originalUserId
-);
+                    u.USERID === oUser.USERID && u.USERID !== this._originalUserId
+                );
 
-if (isDuplicate) {
-    errors.push("El USERID ya existe. Debe ser único.");
-}
+                if (isDuplicate) {
+                    errors.push("El USERID ya existe. Debe ser único.");
+                }
 
 
             // if (!isEdit || (isEdit && oUser.USERID !== this._originalUserId)) {
@@ -757,6 +757,11 @@ if (isDuplicate) {
             //         errors.push("El USERID ya existe. Debe ser único.");
             //     }
             // }
+
+            // Número de teléfono válido
+            if (!this.isValidPhoneNumber(oUser.PHONENUMBER)) {
+                errors.push("El número de teléfono no es válido.");
+            }
 
             // Email válido
             if (!this.isValidEmail(oUser.EMAIL)) {
@@ -772,8 +777,6 @@ if (isDuplicate) {
             if (!Array.isArray(oUser.ROLES) || oUser.ROLES.length === 0) {
                 errors.push("Debes asignar al menos un rol.");
             }
-
-            // Puedes agregar más validaciones aquí...
 
             return errors.length > 0 ? errors.join("\n") : null;
         },
@@ -1002,7 +1005,7 @@ if (isDuplicate) {
             // Crea un array de filtros para todos los campos relevantes
             var aFilters = [];
 
-            // Campos a buscar (ajusta según tus columnas)
+            // Campos a buscar
             var aFields = [
                 "USERID", "USERNAME", "FIRSTNAME", "LASTNAME", "EMAIL", "COMPANYNAME", "DEPARTMENT", "PHONENUMBER","BIRTHDAYDATE", "FUNCTION"
             ];
@@ -1017,7 +1020,6 @@ if (isDuplicate) {
                     test: function(aRoles) {
                         if (!Array.isArray(aRoles)) return false;
                         return aRoles.some(function(role) {
-                            // Puedes buscar por ROLENAME o ROLEID según tu estructura
                             return (role.ROLENAME && role.ROLENAME.toLowerCase().includes(sQuery)) ||
                                 (role.ROLEID && role.ROLEID.toLowerCase().includes(sQuery));
                         });
@@ -1032,7 +1034,7 @@ if (isDuplicate) {
                 ];
             }
 
-            // Aplica el filtro (OR entre campos)
+            // Aplica el filtro
             oBinding.filter(new sap.ui.model.Filter(aFilters, false)); // false = OR, true = AND
         },
 
@@ -1051,7 +1053,22 @@ if (isDuplicate) {
         },
 
         isValidPhoneNumber: function(phone) {
-            return /^\d{10}$/.test(phone); // Ejemplo: 10 dígitos numéricos
+            var sNumbers = phone.replace(/\D/g, "");
+            if (sNumbers.length === 10 || sNumbers === "") {
+                return true;
+            } else {
+                return false;
+            }
+        },
+
+        onPhoneLiveChange: function(oEvent) {
+            var sValue = oEvent.getParameter("value").replace(/\D/g, ""); // Solo números
+            // Formato: 999-999-9999
+            if (sValue.length > 3 && sValue.length <= 6)
+                sValue = sValue.slice(0,3) + "-" + sValue.slice(3);
+            else if (sValue.length > 6)
+                sValue = sValue.slice(0,3) + "-" + sValue.slice(3,6) + "-" + sValue.slice(6,10);
+            oEvent.getSource().setValue(sValue);
         }
 
 
