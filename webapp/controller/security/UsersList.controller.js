@@ -987,40 +987,53 @@ if (isDuplicate) {
             this.getView().getModel("viewModel").setProperty("/buttonsEnabled", true);
         },
 
-        onSearchUser: function () {
-            var oView = this.getView();
+        onSearchUser: function (oEvent) {
+            var sQuery = oEvent.getSource().getValue().toLowerCase();
             var oTable = this.byId("IdTable1UsersManageTable");
-            var oModel = oTable.getModel();
-            var aAllUsers = oModel.getData().value || [];
+            var oBinding = oTable.getBinding("rows");
+            if (!oBinding) return;
 
-            // Obtén el valor del input de búsqueda
-            var sQuery = oView.byId("SearchUserField").getValue().toLowerCase();
-
+            // Si la búsqueda está vacía, elimina los filtros
             if (!sQuery) {
-                // Si no hay búsqueda, recarga todos los usuarios
-                this.loadUsers();
+                oBinding.filter([]);
                 return;
             }
 
-            // Filtra por cualquier campo del usuario
-            var aFiltered = aAllUsers.filter(function(user) {
-                return Object.values(user).some(function(val) {
-                    if (sQuery === "activo" && user.DETAIL_ROW && user.DETAIL_ROW.ACTIVED === true) {
-                        return true;
-                    }
-                    if (sQuery === "inactivo" && user.DETAIL_ROW && user.DETAIL_ROW.ACTIVED === false) {
-                        return true;
-                    }
-                    // convertir los objetos a string para la búsqueda
-                    if (typeof val === "object" && val !== null) {
-                        console.log("Valor no es un string:", val);
-                        return JSON.stringify(val).toLowerCase().includes(sQuery);
-                    }
-                    return String(val).toLowerCase().includes(sQuery);
-                });
+            // Crea un array de filtros para todos los campos relevantes
+            var aFilters = [];
+
+            // Campos a buscar (ajusta según tus columnas)
+            var aFields = [
+                "USERID", "USERNAME", "FIRSTNAME", "LASTNAME", "EMAIL", "COMPANYNAME", "DEPARTMENT", "PHONENUMBER","BIRTHDAYDATE", "FUNCTION"
+            ];
+
+            aFields.forEach(function (field) {
+                aFilters.push(new sap.ui.model.Filter(field, sap.ui.model.FilterOperator.Contains, sQuery));
             });
 
-            oModel.setProperty("/value", aFiltered);
+            aFilters.push(
+                new sap.ui.model.Filter({
+                    path: "ROLES",
+                    test: function(aRoles) {
+                        if (!Array.isArray(aRoles)) return false;
+                        return aRoles.some(function(role) {
+                            // Puedes buscar por ROLENAME o ROLEID según tu estructura
+                            return (role.ROLENAME && role.ROLENAME.toLowerCase().includes(sQuery)) ||
+                                (role.ROLEID && role.ROLEID.toLowerCase().includes(sQuery));
+                        });
+                    }
+                })
+            );
+
+            // Filtro especial para "activo"/"inactivo"
+            if (sQuery === "activo" || sQuery === "inactivo") {
+                aFilters = [
+                    new sap.ui.model.Filter("DETAIL_ROW/ACTIVED", sap.ui.model.FilterOperator.EQ, sQuery === "activo")
+                ];
+            }
+
+            // Aplica el filtro (OR entre campos)
+            oBinding.filter(new sap.ui.model.Filter(aFilters, false)); // false = OR, true = AND
         },
 
         onRefresh: function(){
