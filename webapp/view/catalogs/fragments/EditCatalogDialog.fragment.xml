@@ -32,9 +32,9 @@
                 <Input value="{editModel>/IMAGE}"/>
                 
                 <Label text="DESCRIPTION"/>
-                <TextArea value="{editModel>/DESCRIPTION}" rows="3"/>
+                <TextArea value="{editModel>/DESCRIPTION}" rows="3" required="true"/>
                 
-                <!-- Agrega más campos según necesites -->
+                
             </form:SimpleForm>
         </content>
         

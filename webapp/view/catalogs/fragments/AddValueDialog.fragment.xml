@@ -21,7 +21,23 @@
         <Input value="{newValueModel>/VALUE}" />
 
         <Label text="VALUEPAID" />
-        <Input value="{newValueModel>/VALUEPAID}" />
+        <FlexBox>
+            <Input value="{addValueModel>/VALUEPAID1}" editable="false"/>
+
+            <Text text="-" />
+
+            <ComboBox id="valuePaidComboBox"
+                items="{
+                    path: 'addValueModel>/ComboBoxItems'
+                }"
+                selectedKey="{addValueModel>/VALUEPAID2}"
+                width="100%"
+                placeholder="Seleccione una opción">
+                <core:Item key="{addValueModel>key}" text="{addValueModel>text}" />
+            </ComboBox>
+        </FlexBox>
+
+
 
         <Label text="ALIAS" />
         <Input value="{newValueModel>/ALIAS}" />
@@ -30,7 +46,7 @@
         <Input value="{newValueModel>/IMAGE}" />
 
         <Label text="DESCRIPTION" />
-        <TextArea value="{newValueModel>/DESCRIPTION}" rows="3"/>
+        <TextArea value="{newValueModel>/DESCRIPTION}" rows="3" required="true"/>
       </form:SimpleForm>
     </content>
     

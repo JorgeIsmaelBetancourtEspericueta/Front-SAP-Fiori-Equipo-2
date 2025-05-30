@@ -32,7 +32,7 @@
         <Label text="IMAGE URL"/>
         <Input value="{addCatalogModel>/IMAGE}"/>
         
-        <Label text="DESCRIPTION"/>
+        <Label text="DESCRIPTION" required="true"/>
         <TextArea value="{addCatalogModel>/DESCRIPTION}" rows="3"/>
         
         <Label text="Estado Inicial"/>

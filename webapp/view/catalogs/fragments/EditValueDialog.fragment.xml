@@ -10,28 +10,44 @@
         
         <content>
             <form:SimpleForm editable="true">
-            <Label text="LABELID" required="true"/>
-        <Text text="{values>/selectedValue/LABELID}" />
-        
-         <Label text="VALUEID" required="true"/>
-        <Input value="{newValueModel>/VALUEID}"  id="InputValueIdEdit" editable="false"/>
-
-        <Label text="VALUE" required="true"/>
-        <Input value="{newValueModel>/VALUE}" />
-
-        <Label text="VALUEPAID" />
-        <Input value="{newValueModel>/VALUEPAID}" />
-
-        <Label text="ALIAS" />
-        <Input value="{newValueModel>/ALIAS}" />
-
-        <Label text="IMAGE" />
-        <Input value="{newValueModel>/IMAGE}" />
-
-        <Label text="DESCRIPTION" />
-        <TextArea value="{newValueModel>/DESCRIPTION}" rows="3"/>
+                <Label text="LABELID" required="true"/>
+                <Text text="{values>/selectedValue/LABELID}" />
                 
-                <!-- Agrega más campos según necesites -->
+                <Label text="VALUEID" required="true"/>
+                <Text text="{newValueModel>/VALUEID}"  id="InputValueIdEdit"/>
+
+                <Label text="VALUE" required="true"/>
+                <Input value="{newValueModel>/VALUE}" />
+
+                <Label text="VALUEPAID" />
+                <Text text="{newValueModel>/VALUEPAID}" />
+                <FlexBox>
+                    <Input id="valueInput1" value="{addValueModel>/VALUEPAID1}" editable="false"/>
+
+                    <Text text="-" />
+
+                    <ComboBox id="valuePaidComboBox2"
+                        items="{
+                            path: 'addValueModel>/ComboBoxItems'
+                        }"
+                        selectedKey="{addValueModel>/VALUEPAID2}"
+                        width="100%"
+                        placeholder="Seleccione una opción">
+                        <core:Item key="{addValueModel>key}" text="{addValueModel>text}" />
+                    </ComboBox>
+                </FlexBox>
+
+
+                <Label text="ALIAS" />
+                <Input value="{newValueModel>/ALIAS}" />
+
+                <Label text="IMAGE" />
+                <Input value="{newValueModel>/IMAGE}" />
+
+                <Label text="DESCRIPTION" />
+                <TextArea value="{newValueModel>/DESCRIPTION}" rows="3" required="true"/>
+                
+                
             </form:SimpleForm>
         </content>
         
