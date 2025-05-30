@@ -6,8 +6,8 @@
     xmlns:layout="sap.ui.layout.form"
     class="sapUiSizeCompact"
 >
-    <!-- 🔹 Barra de herramientas -->
-    <OverflowToolbar>
+    <!-- Barra de herramientas -->
+    <OverflowToolbar >
         <Title
             text="Values"
             level="H2"
@@ -54,7 +54,7 @@
         />
     </OverflowToolbar>
 
-    <!-- 🔹 Tabla de valores -->
+    <!-- Tabla de valores -->
     <Table
         id="valuesTable"
         items="{path: 'values>/values'}"

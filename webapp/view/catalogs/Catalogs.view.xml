@@ -88,7 +88,7 @@
                         >
                             <columns>
                                 <Column width="120px">
-                                    <!-- Define un ancho fijo para cada columna -->
+                                    
                                     <Text text="LABELID" />
                                 </Column>
                                 <Column width="140px">
