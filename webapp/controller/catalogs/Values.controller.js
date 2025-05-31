@@ -110,7 +110,7 @@ sap.ui.define([
             oView.setBusy(true);
             console.log("Valor de VALUEPAID2:", sFinalValuePaid);
             $.ajax({
-                url: `http://localhost:4004/api/security/crudValues?action=update&valueid=${oFormData.VALUEID}`,
+                url: `https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/crudValues?action=update&valueid=${oFormData.VALUEID}`,
                 method: "POST",
                 contentType: "application/json",
                 data: JSON.stringify({ values: oParams }),
@@ -224,7 +224,7 @@ sap.ui.define([
             oView.setBusy(true);
 
             $.ajax({
-                url: `http://localhost:4004/api/security/crudValues?action=create`,
+                url: `https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/crudValues?action=create`,
                 method: "POST",
                 contentType: "application/json", // Asegura que el servidor reciba JSON
                 data: JSON.stringify({values: oParams}), // Envía los datos en formato JSON
@@ -316,7 +316,7 @@ sap.ui.define([
             var oView = this.getView();
             
             $.ajax({
-                url: "http://localhost:4004/api/sec/valuesCRUD?procedure=get&labelID=" + encodeURIComponent(sLabelID),
+                url: "https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/sec/valuesCRUD?procedure=get&labelID=" + encodeURIComponent(sLabelID),
                 method: "GET",
                 success: function(data) {
                     oView.getModel("values").setProperty("/values", data.value || []);
@@ -348,7 +348,7 @@ sap.ui.define([
             console.log("VALUEID correcto para desactivar:", oFormData.VALUEID);
 
             // Construir la URL para la desactivación
-            var sUrl = `http://localhost:4004/api/security/deleteAny?borrado=false&valueid=${oFormData.VALUEID}`;
+            var sUrl = `https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/deleteAny?borrado=false&valueid=${oFormData.VALUEID}`;
 
             // Configurar la petición AJAX para desactivar el value
             oView.setBusy(true);
@@ -397,7 +397,7 @@ sap.ui.define([
             console.log("VALUEID correcto para activar:", oFormData.VALUEID);
 
             // Construir la URL para la activación
-            var sUrl = `http://localhost:4004/api/security/deleteAny?borrado=activar&valueid=${oFormData.VALUEID}`;
+            var sUrl = `https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/deleteAny?borrado=activar&valueid=${oFormData.VALUEID}`;
 
             // Configurar la petición AJAX para activar el value
             oView.setBusy(true);
@@ -455,7 +455,7 @@ sap.ui.define([
                         oView.setBusy(true);
 
                         $.ajax({
-                            url: `http://localhost:4004/api/security/deleteAny?borrado=fisic&valueid=${oFormData.VALUEID}`,
+                            url: `https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/deleteAny?borrado=fisic&valueid=${oFormData.VALUEID}`,
                             method: "POST",
                             success: function () {
                                 oView.setBusy(false);
@@ -498,7 +498,7 @@ sap.ui.define([
                 parentLabel = index > 0 ? validLabels[index - 1] : "";
             }
 
-            var sUrl = `http://localhost:4004/api/security/crudValues?action=get&labelid=${parentLabel}`;
+            var sUrl = `https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/crudValues?action=get&labelid=${parentLabel}`;
             var that = this;
 
             // Llamada AJAX para obtener opciones del ComboBox
@@ -583,7 +583,7 @@ sap.ui.define([
             }
 
             // Llamada a la API para obtener los VALUEID del catálogo padre
-            var sUrl = `http://localhost:4004/api/security/crudValues?action=get&labelid=${parentLabel}`;
+            var sUrl = `https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/crudValues?action=get&labelid=${parentLabel}`;
             var that = this; // Para mantener el contexto dentro del callback
 
             $.ajax({

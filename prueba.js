@@ -1,5 +1,5 @@
 async function obtenerDatosSimulacion() {
-  const url = "http://localhost:4004/api/inv/crudSimulation";
+  const url = "https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/inv/crudSimulation";
 
   const params = new URLSearchParams({
     action: "post",

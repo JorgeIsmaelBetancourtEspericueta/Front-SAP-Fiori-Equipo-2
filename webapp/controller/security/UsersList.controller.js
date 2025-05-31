@@ -35,7 +35,7 @@ sap.ui.define([
             var oModel = new JSONModel();
             var that = this;
 
-            fetch("http://localhost:4004/api/security/crudUsers?action=get", {
+            fetch("https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/crudUsers?action=get", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -63,7 +63,7 @@ sap.ui.define([
             var oView = this.getView();
             var oCompaniesModel = new JSONModel();
 
-            fetch("http://localhost:4004/api/security/crudValues?action=get&labelid=IdCompanies", {
+            fetch("https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/crudValues?action=get&labelid=IdCompanies", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -116,7 +116,7 @@ sap.ui.define([
             var oView = this.getView();
             var oCedisModel = new JSONModel();
 
-            fetch("http://localhost:4004/api/security/crudValues?action=get&labelid=IdCedis", {
+            fetch("https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/crudValues?action=get&labelid=IdCedis", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -159,7 +159,7 @@ sap.ui.define([
             var oView = this.getView();
             var oDeptosModel = new JSONModel();
 
-            fetch("http://localhost:4004/api/security/crudValues?action=get&labelid=IdDepartments", {
+            fetch("https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/crudValues?action=get&labelid=IdDepartments", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -186,7 +186,7 @@ sap.ui.define([
         loadRoles: function () {
             var oView = this.getView();
             var oRolesModel = new JSONModel();
-            fetch("http://localhost:4004/api/security/crudRoles?action=get", {
+            fetch("https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/crudRoles?action=get", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -413,7 +413,7 @@ sap.ui.define([
             }
 
             // Llama a la API para guardar el usuario
-            fetch("http://localhost:4004/api/security/crudUsers?action=create", {
+            fetch("https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/crudUsers?action=create", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -639,7 +639,7 @@ sap.ui.define([
             }
 
             // Llama a la API para actualizar el usuario
-            fetch(`http://localhost:4004/api/security/crudUsers?action=update&userid=${encodeURIComponent(this.selectedUser.USERID)}`, {
+            fetch(`https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/crudUsers?action=update&userid=${encodeURIComponent(this.selectedUser.USERID)}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -807,7 +807,7 @@ sap.ui.define([
 
         deleteUser: function(UserId){
             var that = this;
-            fetch(`http://localhost:4004/api/security/deleteAny?borrado=fisic&userid=${encodeURIComponent(UserId)}`, {
+            fetch(`https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/deleteAny?borrado=fisic&userid=${encodeURIComponent(UserId)}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -860,7 +860,7 @@ sap.ui.define([
 
         desactivateUser: function (UserId) {
             var that = this;
-            fetch(`http://localhost:4004/api/security/deleteAny?borrado=logic&userid=${encodeURIComponent(UserId)}`, {
+            fetch(`https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/deleteAny?borrado=logic&userid=${encodeURIComponent(UserId)}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -925,7 +925,7 @@ sap.ui.define([
         },
         activateUser: function (UserId) {
             var that = this;
-            fetch(`http://localhost:4004/api/security/deleteAny?borrado=activar&userid=${encodeURIComponent(UserId)}`, {
+            fetch(`https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/deleteAny?borrado=activar&userid=${encodeURIComponent(UserId)}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"

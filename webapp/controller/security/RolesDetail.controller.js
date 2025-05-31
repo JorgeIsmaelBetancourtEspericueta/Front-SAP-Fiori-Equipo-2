@@ -50,7 +50,7 @@ sap.ui.define(
           const view = this.getView();
 
           const response = await fetch(
-            "http://localhost:4004/api/security/crudValues?action=get&labelid=",
+            "https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/crudValues?action=get&labelid=",
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -162,7 +162,7 @@ sap.ui.define(
         _loadRolesDataIntoComponent: async function () {
           try {
             const response = await fetch(
-              "http://localhost:4004/api/security/crudRoles?action=get",
+              "https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/crudRoles?action=get",
               {
                 method: "POST", 
                 headers: { "Content-Type": "application/json" },

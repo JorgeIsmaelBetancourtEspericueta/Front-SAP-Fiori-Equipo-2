@@ -235,7 +235,7 @@ sap.ui.define(
 
           try {
             const res = await fetch(
-              `http://localhost:4004/api/security/crudRoles?action=get&roleid=${sId}`,
+              `https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/crudRoles?action=get&roleid=${sId}`,
               {
                 method: "POST", 
               }
@@ -363,7 +363,7 @@ sap.ui.define(
           };
 
           let sMethod = "POST";
-          let sUrl = `http://localhost:4004/api/security/crudRoles?action=${
+          let sUrl = `https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/crudRoles?action=${
             bIsEditMode ? "update" : "create"
           }`;
 
@@ -467,7 +467,7 @@ sap.ui.define(
         _loadRolesDataIntoComponent: async function () {
           try {
             const response = await fetch(
-              "http://localhost:4004/api/security/crudRoles?action=get",
+              "https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/crudRoles?action=get",
               {
                 method: "POST", 
                 headers: { "Content-Type": "application/json" },
@@ -511,7 +511,7 @@ sap.ui.define(
             emphasizedAction: MessageBox.Action.YES,
             confirmAction: MessageBox.Action.YES,
             method: "POST",
-            url: "http://localhost:4004/api/security/deleteAny?roleid=", 
+            url: "https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/deleteAny?roleid=", 
             successMessage: "Rol desactivado correctamente.",
           });
         },
@@ -542,7 +542,7 @@ sap.ui.define(
                 if (sAction === MessageBox.Action.OK) {
                   try {
                     const response = await fetch(
-                      `http://localhost:4004/api/security/deleteAny?roleid=${oRole.ROLEID}&borrado=fisic`, 
+                      `https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/deleteAny?roleid=${oRole.ROLEID}&borrado=fisic`, 
                       {
                         method: "POST", 
                         headers: { "Content-Type": "application/json" },
@@ -590,7 +590,7 @@ sap.ui.define(
         loadRolesData: async function () {
           try {
             const response = await fetch(
-              "http://localhost:4004/api/security/crudRoles?action=get",
+              "https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/crudRoles?action=get",
               { method: "POST" }
             );
             if (!response.ok) {
@@ -639,7 +639,7 @@ sap.ui.define(
           const view = this.getView();
           try {
             const response = await fetch(
-              `http://localhost:4004/api/security/crudValues?action=get&labelid=${labelId}`,
+              `https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/crudValues?action=get&labelid=${labelId}`,
               {
                 method: "POST", // Assuming POST for GET is intentional
                 headers: { "Content-Type": "application/json" },
