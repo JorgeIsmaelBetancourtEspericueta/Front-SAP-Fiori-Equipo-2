@@ -87,7 +87,8 @@ sap.ui.define(
             new JSONModel({
               strategies: [], // <-- sin datos hardcoded
               filteredCount: 0,
-              selectedCount: 0,
+              selectedCount: 0, // Asegura que selectedCount exista
+              isDeleteMode: false, // <- Agrega esta línea si no está en otro lado
               filters: {
                 dateRange: null,
                 investmentRange: [0, 10000],
@@ -217,6 +218,153 @@ sap.ui.define(
             .getModel("viewModel")
             .setProperty("/selectedTab", sKey);
         },
+        onSelectionChange: function () {
+          const oTable = sap.ui.getCore().byId("historyTable"); // Usa sap.ui.getCore() si es un Fragment
+          const selectedItems = oTable.getSelectedItems();
+          const selectedCount = selectedItems.length;
+          this.getView().getModel("historyModel").setProperty("/selectedCount", selectedCount);
+        },
+
+
+        onToggleDeleteMode: function (oEvent) {
+          const bPressed = oEvent.getParameter("pressed");
+          const oModel = this.getView().getModel("historyModel");
+
+          oModel.setProperty("/isDeleteMode", bPressed);
+          oModel.setProperty("/selectedCount", 0); // reinicia conteo
+          const oTable = this.byId("historyTable");
+          oTable.removeSelections(true);
+        },
+
+        onDeleteSelected: async function () {
+          const oTable = sap.ui.getCore().byId("historyTable");
+          const aSelectedItems = oTable.getSelectedItems();
+          const oModel = this.getView().getModel("historyModel");
+
+          if (aSelectedItems.length === 0) {
+            MessageBox.information("Seleccione al menos una simulación para eliminar.");
+            return;
+          }
+
+          const self = this;
+
+          MessageBox.confirm(
+            "¿Está seguro que desea eliminar las simulaciones seleccionadas?",
+            {
+              title: "Confirmar eliminación",
+              actions: [MessageBox.Action.YES, MessageBox.Action.NO],
+              emphasizedAction: MessageBox.Action.YES,
+              onClose: async function (sAction) {
+                if (sAction !== MessageBox.Action.YES) return;
+
+                const PORT = 4004;
+                let errores = [];
+                for (let oItem of aSelectedItems) {
+                  const oContext = oItem.getBindingContext("historyModel");
+                  const idSimulation = oContext.getProperty("idSimulation");
+
+                  try {
+                    const response = await fetch(
+                      `http://localhost:${PORT}/api/inv/crudSimulation?action=delete&id=${idSimulation}`,
+                      {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                      }
+                    );
+
+                    const result = await response.json();
+
+                    if (!response.ok || result.error) {
+                      errores.push(idSimulation);
+                      console.error(`Error al eliminar ${idSimulation}:`, result.error || response.statusText);
+                    }
+                  } catch (err) {
+                    errores.push(idSimulation);
+                    console.error(`Excepción al eliminar ${idSimulation}:`, err);
+                  }
+                }
+
+                // Filtrar del modelo local los eliminados exitosamente
+                const aStrategies = oModel.getProperty("/strategies");
+                const aRestantes = aStrategies.filter(item => !aSelectedItems.some(sel =>
+                  sel.getBindingContext("historyModel").getProperty("idSimulation") === item.idSimulation
+                ));
+                oModel.setProperty("/strategies", aRestantes);
+                oModel.setProperty("/filteredCount", aRestantes.length);
+                oModel.setProperty("/selectedCount", 0);
+
+                // Actualizar respaldo original si existe
+                if (oModel.getProperty("/_originalStrategies")) {
+                  const aOriginal = oModel.getProperty("/_originalStrategies");
+                  const aUpdatedOriginal = aOriginal.filter(item => !aSelectedItems.some(sel =>
+                    sel.getBindingContext("historyModel").getProperty("idSimulation") === item.idSimulation
+                  ));
+                  oModel.setProperty("/_originalStrategies", aUpdatedOriginal);
+                }
+
+                if (errores.length === 0) {
+                  MessageToast.show("Simulaciones eliminadas correctamente.");
+                } else {
+                  MessageBox.warning(
+                    `Se eliminaron algunas simulaciones, pero hubo errores en ${errores.length}: ${errores.join(", ")}`
+                  );
+                }
+              },
+            }
+          );
+        },
+
+
+
+        onDeleteSimulation: function () {
+          const oTable = sap.ui.getCore().byId("historyTable");
+          const aSelectedItems = oTable.getSelectedItems();
+
+          if (!aSelectedItems.length) {
+            MessageBox.information("Seleccione una simulación para eliminar.");
+            return;
+          }
+
+          const oItem = aSelectedItems[0];
+          const oContext = oItem.getBindingContext("historyModel");
+          const idSimulation = oContext.getProperty("idSimulation");
+
+          // Confirmación de eliminación
+          MessageBox.confirm("¿Está seguro que desea eliminar esta simulación?", {
+            title: "Eliminar Simulación",
+            actions: [MessageBox.Action.YES, MessageBox.Action.NO],
+            onClose: (sAction) => {
+              if (sAction === MessageBox.Action.YES) {
+                // Eliminar desde backend
+                fetch(`http://localhost:4004/api/inv/crudSimulation?action=delete&id=${idSimulation}`, {
+                  method: "POST",
+                })
+                  .then((response) => {
+                    if (!response.ok) {
+                      throw new Error("Error al eliminar la simulación.");
+                    }
+                    return response.json();
+                  })
+                  .then(() => {
+                    MessageToast.show("Simulación eliminada correctamente.");
+
+                    // Opcional: refrescar modelo de historial
+                    this.loadSimulationHistory?.(); // Solo si tienes esta función
+
+                    // Limpiar selección
+                    oTable.removeSelections(true);
+                  })
+                  .catch((err) => {
+                    console.error("Error:", err);
+                    MessageBox.error("No se pudo eliminar la simulación.");
+                  });
+              }
+            },
+          });
+        },
+
+
+
 
         loadSimulationHistory: function () {
           const oHistoryModel = this.getView().getModel("historyModel");
@@ -258,7 +406,9 @@ sap.ui.define(
             .catch((err) => {
               console.error("Error al cargar historial de simulaciones:", err);
             });
-        },
+        }
+
+        ,
 
         /**
          * Event handler for after rendering of the view.
@@ -595,8 +745,8 @@ sap.ui.define(
         formatDate: function (oDate) {
           return oDate
             ? DateFormat.getDateInstance({ pattern: "yyyy-MM-dd" }).format(
-                oDate
-              )
+              oDate
+            )
             : null;
         },
 
@@ -741,8 +891,8 @@ sap.ui.define(
               DATE_GRAPH: dateObject, // Property for VizFrame (Date object)
               DATE: dateObject
                 ? DateFormat.getDateInstance({ pattern: "yyyy-MM-dd" }).format(
-                    dateObject
-                  )
+                  dateObject
+                )
                 : null, // Property for table (formatted string)
               OPEN: parseFloat(oItem.OPEN),
               HIGH: parseFloat(oItem.HIGH),
@@ -777,8 +927,8 @@ sap.ui.define(
               reasoning: signal.REASONING || "",
               TOOLTIP: signal.TYPE
                 ? `Acción: ${signal.TYPE.toUpperCase()}, Precio: $${signal.PRICE?.toFixed(
-                    2
-                  )}, Acciones: ${signal.SHARES}`
+                  2
+                )}, Acciones: ${signal.SHARES}`
                 : "",
             };
           });

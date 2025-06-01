@@ -91,13 +91,14 @@
                     press=".onToggleDeleteMode"
                 />
                 <Button
-                    icon="sap-icon://delete"
-                    text="Eliminar Seleccionados"
-                    type="Transparent"
-                    visible="{historyModel>/isDeleteMode}"
-                    press=".onDeleteSelected"
-                    enabled="{= ${historyModel>/selectedCount} > 0 }"
-                />
+  icon="sap-icon://delete"
+  text="Eliminar Seleccionados"
+  type="Transparent"
+  visible="{historyModel>/isDeleteMode}"
+  press=".onDeleteSelected"
+  enabled="{= ${historyModel>/selectedCount} > 0 }"
+/>
+
             </OverflowToolbar>
 
             <!-- Tabla -->
