@@ -24,7 +24,7 @@ sap.ui.define(
 
 
           $.ajax({
-            url: "http://localhost:4004/api/security/crudLabels?action=get",
+            url: "https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/crudLabels?action=get",
             method: "POST",
             success: function (data) {
               oModel.setData({ value: data.value });
@@ -164,7 +164,7 @@ sap.ui.define(
             console.log("Estado ACTIVED antes de guardar:", bActived);
 
             $.ajax({
-                url: "http://localhost:4004/api/security/crudLabels?action=create",
+                url: "https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/crudLabels?action=create",
                 method: "POST",
                 contentType: "application/json",
                 data: JSON.stringify({ labels: oParams }),
@@ -280,7 +280,7 @@ sap.ui.define(
 
                   };
 
-          var sUrl = `http://localhost:4004/api/security/crudLabels?action=update&labelid=${oEditedData.LABELID}`;
+          var sUrl = `https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/crudLabels?action=update&labelid=${oEditedData.LABELID}`;
 
           //Llamada a la API para actualizar
           $.ajax({
@@ -340,7 +340,7 @@ sap.ui.define(
                 return;
             }
 
-            var sCheckUrl = `http://localhost:4004/api/security/crudValues?action=get&labelid=${oData.LABELID}`;
+            var sCheckUrl = `https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/crudValues?action=get&labelid=${oData.LABELID}`;
 
             // 🔹 Obtener los values relacionados
             $.ajax({
@@ -356,7 +356,7 @@ sap.ui.define(
                                 // 🔹 Eliminar todos los values relacionados primero
                                 var aDeleteRequests = aValues.map(function (oValue) {
                                     return $.ajax({
-                                        url: `http://localhost:4004/api/security/deleteAny?borrado=fisic&valueid=${oValue.VALUEID}`,
+                                        url: `https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/deleteAny?borrado=fisic&valueid=${oValue.VALUEID}`,
                                         method: "POST"
                                     });
                                 });
@@ -364,7 +364,7 @@ sap.ui.define(
                                 $.when.apply($, aDeleteRequests).then(function () {
                                     // 🔹 Luego eliminar el label
                                     $.ajax({
-                                        url: `http://localhost:4004/api/security/deleteAny?borrado=fisic&labelid=${oData.LABELID}`,
+                                        url: `https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/deleteAny?borrado=fisic&labelid=${oData.LABELID}`,
                                         method: "POST",
                                         success: function () {
                                             MessageToast.show("Label y values eliminados correctamente.");
@@ -406,7 +406,7 @@ sap.ui.define(
             }
 
             // Construir la URL para la activación
-            var sUrl = `http://localhost:4004/api/security/deleteAny?borrado=activar&labelid=${oSelectedLabel.LABELID}`;
+            var sUrl = `https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/deleteAny?borrado=activar&labelid=${oSelectedLabel.LABELID}`;
 
             // Configurar la petición AJAX para activar el label
             oView.setBusy(true);
@@ -447,7 +447,7 @@ sap.ui.define(
           }
 
           // Construir la URL con los parámetros requeridos
-          var sUrl = `http://localhost:4004/api/security/deleteAny?borrado=false&labelid=${oSelectedLabel.LABELID}`;
+          var sUrl = `https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/deleteAny?borrado=false&labelid=${oSelectedLabel.LABELID}`;
 
           // Configurar la petición AJAX
           oView.setBusy(true);
@@ -494,7 +494,7 @@ sap.ui.define(
 
       //     $.ajax({
       //       url:
-      //         "http://localhost:4004/api/sec/logicalLabel?status=" +
+      //         "https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/sec/logicalLabel?status=" +
       //         sAction +
       //         "&&labelID=" +
       //         oData.LABELID,
@@ -538,7 +538,7 @@ sap.ui.define(
         //   var oModel = this.getView().getModel();
 
         //   $.ajax({
-        //     url: "http://localhost:4004/api/sec/getall",
+        //     url: "https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/sec/getall",
         //     method: "GET",
         //     success: function (data) {
         //       oModel.setData({ value: data.value });
@@ -555,7 +555,7 @@ sap.ui.define(
 
           var sLabelID = oSelectedData.LABELID;
           var sUrl =
-            "http://localhost:4004/api/security/crudValues?action=get&labelid=" +
+            "https://reversionapicontainer.greenglacier-34ca94a2.westus.azurecontainerapps.io/api/security/crudValues?action=get&labelid=" +
             encodeURIComponent(sLabelID);
           var that = this;
 

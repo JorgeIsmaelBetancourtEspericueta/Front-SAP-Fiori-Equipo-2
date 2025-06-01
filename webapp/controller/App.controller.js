@@ -30,7 +30,7 @@ sap.ui.define([
 
                 switch (sKey) {
                     case "roles":
-                        oRouter.navTo("RouteRolesMaster");
+                        oRouter.navTo("RouteRoles");
                         break;
                     case "users":
                         oRouter.navTo("RouteUsersList");
@@ -38,7 +38,7 @@ sap.ui.define([
                     case "catalogs":
                         oRouter.navTo("RouteCatalogs");
                         break;
-                    case "invertions":
+                    case "investments":
                         oRouter.navTo("RouteInvestments");
                         break;
                     default:
